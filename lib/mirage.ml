@@ -531,7 +531,7 @@ type block = BLOCK
 
 let block = Type BLOCK
 
-let block_of_file: string -> block impl =
+let block_of_file () : string -> block impl =
   function filename ->
     impl block filename (module Block)
 
@@ -587,8 +587,8 @@ let fat: block impl -> fs impl =
     impl fs block (module Fat)
 
 (* This would deserve to be in its own lib. *)
-let kv_ro_of_fs =
-  let dummy_fat = fat (block_of_file "xx") in
+let kv_ro_of_fs () =
+  let dummy_fat = fat (block_of_file () "xx") in
   let libraries = Impl.libraries dummy_fat in
   let packages = Impl.packages dummy_fat in
   let fn = foreign "Fat.KV_RO.Make" ~libraries ~packages (fs @-> kv_ro) in
@@ -613,7 +613,7 @@ module Fat_of_files = struct
     name t ^ ".img"
 
   let block t =
-    block_of_file (block_file t)
+    block_of_file () (block_file t)
 
   let packages t =
     Fat.packages (block t)
