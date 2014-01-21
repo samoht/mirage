@@ -531,7 +531,7 @@ type block = BLOCK
 
 let block = Type BLOCK
 
-let block_of_file: string -> block impl =
+let block_of_file () : string -> block impl =
   function filename ->
     impl block filename (module Block)
 
@@ -587,8 +587,8 @@ let fat: block impl -> fs impl =
     impl fs block (module Fat)
 
 (* This would deserve to be in its own lib. *)
-let kv_ro_of_fs =
-  let dummy_fat = fat (block_of_file "xx") in
+let kv_ro_of_fs () =
+  let dummy_fat = fat (block_of_file () "xx") in
   let libraries = Impl.libraries dummy_fat in
   let packages = Impl.packages dummy_fat in
   let fn = foreign "Fat.KV_RO.Make" ~libraries ~packages (fs @-> kv_ro) in
@@ -613,7 +613,7 @@ module Fat_of_files = struct
     name t ^ ".img"
 
   let block t =
-    block_of_file (block_file t)
+    block_of_file () (block_file t)
 
   let packages t =
     Fat.packages (block t)
@@ -644,10 +644,10 @@ module Fat_of_files = struct
     append oc "";
     append oc "rm -f ${IMG}";
     (match t.dir with None -> () | Some d -> append oc "cd %s/" d);
-    append oc "${FAT} create ${IMG}";
+    append oc "SIZE=$(du -s . | cut -f 1)";
+    append oc "${FAT} create ${IMG} ${SIZE}KiB";
     append oc "${FAT} add ${IMG} %s" t.regexp;
     append oc "echo Created '%s'" (block_file t);
-    append oc "";
     close_out oc;
     Unix.chmod file 0o755;
     command "./make-%s-image.sh" (name t)
