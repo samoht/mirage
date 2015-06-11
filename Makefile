@@ -61,7 +61,7 @@ ARCHIVE = https://github.com/mirage/mirage/archive/v$(VERSION).tar.gz
 release:
 	git tag -a v$(VERSION) -m "Version $(VERSION)."
 	git push upstream v$(VERSION)
-	$(MAKE) pr
+#	$(MAKE) pr
 
 pr:
 	opam publish prepare $(NAME).$(VERSION) $(ARCHIVE)
