@@ -162,8 +162,6 @@ val direct_kv_ro: string -> kv_ro impl
 (** Direct access to the underlying filesystem as a key/value
     store. For Xen backends, this is equivalent to [crunch]. *)
 
-
-
 (** {2 Filesystem} *)
 
 (** Implementations of the [V1.FS] signature. *)
@@ -328,6 +326,13 @@ val direct_stackv4_with_dhcp:
   console impl -> network impl -> stackv4 impl
 
 val socket_stackv4: console impl ->  Ipaddr.V4.t list -> stackv4 impl
+
+(** {Irmin} *)
+
+val irmin: ?time:time impl -> ?depth:int -> ?branch:string ->
+  stackv4 impl -> string -> kv_ro impl
+(** Create a read-only Irmin store which will be cloned at runtime
+    when the unikernel starts. *)
 
 (** {Resolver configuration} *)
 

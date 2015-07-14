@@ -1772,6 +1772,78 @@ let conduit = Type Conduit
 let conduit_direct ?(tls=false) s =
   impl conduit { Conduit.stackv4 = Some s; tls } (module Conduit)
 
+module Irmin_RO = struct
+
+  type t = {
+    depth: int option;
+    branch: string option;
+    time: time impl;
+    stack: stackv4 impl;
+    tls: bool;
+    uri: string;
+  }
+
+  let name t =
+    let x =
+      t.uri ^ Impl.name t.time ^ Impl.name t.stack ^ string_of_bool t.tls
+    in
+    Name.of_key ("Irmin_RO" ^ x) ~base:"irmin_RO"
+
+  let module_name t = String.capitalize (name t)
+
+  let packages t  =
+    ["mirage-conduit"; "mirage-irmin"]
+    @ Impl.packages t.time @ Impl.packages t.stack @
+    (if t.tls then ["tls"] else [])
+
+  let libraries t =
+    ["conduit.mirage"; "irmin.mirage"]
+    @ Impl.libraries t.time @ Impl.libraries t.stack @
+    (if t.tls then ["tls"] else [])
+
+  let configure t =
+    Impl.configure t.time;
+    Impl.configure t.stack;
+    newline_main ();
+    append_main "module Context_%s = struct" (name t);
+    append_main "  module Conduit = Conduit_mirage.Context(%s)(%s)"
+      (Impl.module_name t.time) (Impl.module_name t.stack);
+    append_main "  let v =";
+    append_main "    let x = lazy (";
+    append_main "      %s () >>= function" (Impl.name t.stack);
+    append_main "      | `Error _  -> %s" (driver_initialisation_error
+                                          @@ Impl.name t.stack);
+    append_main "      | `Ok stack ->";
+    append_main "        Conduit.create ~tls:%b stack >|= fun x ->" t.tls;
+    append_main "        Some x";
+    append_main "    ) in";
+    append_main "    fun () -> Lazy.force x";
+    append_main "end";
+    newline_main ();
+    append_main "module %s = Irmin_mirage.KV_RO(Context_%s)"
+      (module_name t) (name t);
+    newline_main ();
+    append_main "let %s uri =" (name t);
+    let depth = match t.depth with None -> "None" | Some d -> sp "Some %d" d in
+    let branch = match t.branch with None -> "None" | Some b -> sp "Some %S" b in
+    append_main "  let uri = Uri.of_string %S in" t.uri;
+    append_main "  %s.connect ?depth:%s ?branch:%s uri >|= fun t -> `Ok t"
+      (module_name t) depth branch;
+    newline_main ()
+
+  let clean t = Impl.clean t.stack; Impl.clean t.time
+
+  let update_path t root =
+    { t with stack = Impl.update_path t.stack root;
+             time = Impl.update_path t.time root; }
+
+end
+
+let irmin ?(time=default_time) ?depth ?branch stack uri =
+  let tls = match cut_at uri ':' with Some ("https", _) -> true | _ -> false in
+  let t = { Irmin_RO.depth; branch; tls; stack; time; uri } in
+  impl kv_ro t (module Irmin_RO)
+
 module Resolver_unix = struct
   type t = unit
 
