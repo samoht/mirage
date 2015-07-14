@@ -17,6 +17,8 @@
 
 open Mirage_misc
 
+let sp = Printf.sprintf
+
 module StringSet = struct
 
   include Set.Make(String)
@@ -86,7 +88,7 @@ end
 module TODO (N: sig val name: string end) = struct
 
   let todo str =
-    failwith (Printf.sprintf "TODO: %s.%s" N.name str)
+    failwith (sp "TODO: %s.%s" N.name str)
 
   let name _ =
     todo "name"
@@ -135,9 +137,9 @@ and ('a, 'b) app = {
 }
 
 let rec string_of_impl: type a. a impl -> string = function
-  | Impl { t; m = (module M) } -> Printf.sprintf "Impl (%s)" (M.module_name t)
-  | Foreign { name } -> Printf.sprintf "Foreign (%s)" name
-  | App { f; x } -> Printf.sprintf "App (%s, %s)" (string_of_impl f) (string_of_impl x)
+  | Impl { t; m = (module M) } -> sp "Impl (%s)" (M.module_name t)
+  | Foreign { name } -> sp "Foreign (%s)" name
+  | App { f; x } -> sp "App (%s, %s)" (string_of_impl f) (string_of_impl x)
 
 type 'a folder = {
   fn: 'b. 'a -> 'b impl -> 'a
@@ -162,7 +164,7 @@ let rec iter: type a. iterator -> a impl -> unit =
     | App {f; x} -> iter fn f; iter fn x; fn.i x
 
 let driver_initialisation_error name =
-  Printf.sprintf "fail (Failure %S)" name
+  sp "fail (Failure %S)" name
 
 module Name = struct
 
@@ -175,7 +177,7 @@ module Name = struct
       try 1 + Hashtbl.find ids name
       with Not_found -> 1 in
     Hashtbl.replace ids name n;
-    Printf.sprintf "%s%d" name n
+    sp "%s%d" name n
 
   let of_key key ~base =
     find_or_create names key (fun () -> create base)
@@ -206,7 +208,7 @@ module Impl = struct
       let name = match module_names f @ [module_name x] with
         | []   -> assert false
         | [m]  -> m
-        | h::t -> h ^ String.concat "" (List.map (Printf.sprintf "(%s)") t)
+        | h::t -> h ^ String.concat "" (List.map (sp "(%s)") t)
       in
       Name.of_key name ~base:"M"
 
@@ -517,10 +519,10 @@ module Crunch = struct
   ] @ Io_page.libraries ()
 
   let ml t =
-    Printf.sprintf "%s.ml" (name t)
+    sp "%s.ml" (name t)
 
   let mli t =
-    Printf.sprintf "%s.mli" (name t)
+    sp "%s.mli" (name t)
 
   let configure t =
     if not (command_exists "ocaml-crunch") then
@@ -855,7 +857,7 @@ module Fat_of_files = struct
     append_main "module %s = %s" (module_name t) (Impl.module_name fat);
     append_main "let %s = %s" (name t) (Impl.name fat);
     newline_main ();
-    let file = Printf.sprintf "make-%s-image.sh" (name t) in
+    let file = sp "make-%s-image.sh" (name t) in
     let oc = open_out file in
     append oc "#!/bin/sh";
     append oc "";
@@ -1062,11 +1064,11 @@ type ('ipaddr, 'prefix) ip_config = {
 type ipv4_config = (Ipaddr.V4.t, Ipaddr.V4.t) ip_config
 
 let meta_ipv4_config t =
-  Printf.sprintf "(Ipaddr.V4.of_string_exn %S, Ipaddr.V4.of_string_exn %S, [%s])"
+  sp "(Ipaddr.V4.of_string_exn %S, Ipaddr.V4.of_string_exn %S, [%s])"
     (Ipaddr.V4.to_string t.address)
     (Ipaddr.V4.to_string t.netmask)
     (String.concat "; "
-       (List.map (Printf.sprintf "Ipaddr.V4.of_string_exn %S")
+       (List.map (sp "Ipaddr.V4.of_string_exn %S")
           (List.map Ipaddr.V4.to_string t.gateways)))
 
 module IPV4 = struct
@@ -1117,7 +1119,7 @@ module IPV4 = struct
       mname
       (String.concat "; "
          (List.map
-            (fun n -> Printf.sprintf "(i %S)" (Ipaddr.V4.to_string n))
+            (fun n -> sp "(i %S)" (Ipaddr.V4.to_string n))
             t.config.gateways));
     append_main "   return (`Ok ip)";
     newline_main ()
@@ -1133,13 +1135,13 @@ end
 type ipv6_config = (Ipaddr.V6.t, Ipaddr.V6.Prefix.t list) ip_config
 
 let meta_ipv6_config t =
-  Printf.sprintf "(Ipaddr.V6.of_string_exn %S, [%s], [%s])"
+  sp "(Ipaddr.V6.of_string_exn %S, [%s], [%s])"
     (Ipaddr.V6.to_string t.address)
     (String.concat "; "
-       (List.map (Printf.sprintf "Ipaddr.V6.Prefix.of_string_exn %S")
+       (List.map (sp "Ipaddr.V6.Prefix.of_string_exn %S")
           (List.map Ipaddr.V6.Prefix.to_string t.netmask)))
     (String.concat "; "
-       (List.map (Printf.sprintf "Ipaddr.V6.of_string_exn %S")
+       (List.map (sp "Ipaddr.V6.of_string_exn %S")
           (List.map Ipaddr.V6.to_string t.gateways)))
 
 module IPV6 = struct
@@ -1194,7 +1196,7 @@ module IPV6 = struct
       mname
       (String.concat "; "
          (List.map
-            (fun n -> Printf.sprintf "(i %S)" (Ipaddr.V6.to_string n))
+            (fun n -> sp "(i %S)" (Ipaddr.V6.to_string n))
             t.config.gateways));
     append_main "   return (`Ok ip)";
     newline_main ()
@@ -1311,7 +1313,7 @@ module UDPV4_socket = struct
     let ip = match t with
       | None    -> "None"
       | Some ip ->
-        Printf.sprintf "Some (Ipaddr.V4.of_string_exn %s)" (Ipaddr.V4.to_string ip)
+        sp "Some (Ipaddr.V4.of_string_exn %s)" (Ipaddr.V4.to_string ip)
     in
     append_main " %s.connect %S" (module_name t) ip;
     newline_main ()
@@ -1426,7 +1428,7 @@ module TCPV4_socket = struct
     let ip = match t with
       | None    -> "None"
       | Some ip ->
-        Printf.sprintf "Some (Ipaddr.V4.of_string_exn %s)" (Ipaddr.V4.to_string ip)
+        sp "Some (Ipaddr.V4.of_string_exn %s)" (Ipaddr.V4.to_string ip)
     in
     append_main "  %s.connect %S" (module_name t) ip;
     newline_main ()
@@ -1593,7 +1595,7 @@ module STACKV4_socket = struct
   let meta_ips ips =
     String.concat "; "
       (List.map (fun x ->
-           Printf.sprintf "Ipaddr.V4.of_string_exn %S" (Ipaddr.V4.to_string x)
+           sp "Ipaddr.V4.of_string_exn %S" (Ipaddr.V4.to_string x)
          ) ips)
 
   let name t =
@@ -1845,11 +1847,11 @@ module Resolver_direct = struct
     let res_ns = match t with
      | `DNS (_,None,_) -> "None"
      | `DNS (_,Some ns,_) ->
-         Printf.sprintf "Ipaddr.V4.of_string %S" (Ipaddr.V4.to_string ns) in
+         sp "Ipaddr.V4.of_string %S" (Ipaddr.V4.to_string ns) in
     append_main "  let ns = %s in" res_ns;
     let res_ns_port = match t with
      | `DNS (_,_,None) -> "None"
-     | `DNS (_,_,Some ns_port) -> Printf.sprintf "Some %d" ns_port in
+     | `DNS (_,_,Some ns_port) -> sp "Some %d" ns_port in
     append_main "  let ns_port = %s in" res_ns_port;
     append_main "  let res = %s.init ?ns ?ns_port ~stack:%s () in" (module_name_core t) subname;
     append_main "  return (`Ok res)";
@@ -2339,7 +2341,7 @@ let get_extra_ld_flags ~filter pkgs =
       let ldflags = split ldflags ' ' in
       let ldflags = List.map (expand_name ~lib) ldflags in
       let ldflags = String.concat " " ldflags in
-      Printf.sprintf "-L%s %s" dir ldflags :: acc
+      sp "-L%s %s" dir ldflags :: acc
   ) []
 
 let configure_makefile t =
@@ -2397,11 +2399,11 @@ let configure_makefile t =
       | Some machine -> String.length machine > 2 && String.sub machine 0 3 = "arm"
       | None -> failwith "uname -m failed; can't determine target machine type!" in
     if need_zImage then (
-      Printf.sprintf "\t  -o mir-%s.elf\n\
+      sp "\t  -o mir-%s.elf\n\
                       \tobjcopy -O binary mir-%s.elf mir-%s.xen"
                       t.name t.name t.name
     ) else (
-      Printf.sprintf "\t  -o mir-%s.xen" t.name
+      sp "\t  -o mir-%s.xen" t.name
     ) in
 
   begin match !mode with
@@ -2521,7 +2523,7 @@ let configure_main t =
   Nocrypto_entropy.configure ();
   List.iter (fun j -> Impl.configure j) t.jobs;
   List.iter configure_job t.jobs;
-  let names = List.map (fun j -> Printf.sprintf "%s ()" (Impl.name j)) t.jobs in
+  let names = List.map (fun j -> sp "%s ()" (Impl.name j)) t.jobs in
   append_main "let () =";
   append_main "  OS.Main.run (%s >>= fun () -> join [%s])"
               (Nocrypto_entropy.preamble ())
