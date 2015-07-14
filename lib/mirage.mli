@@ -329,10 +329,17 @@ val socket_stackv4: console impl ->  Ipaddr.V4.t list -> stackv4 impl
 
 (** {Irmin} *)
 
-val irmin: ?time:time impl -> ?depth:int -> ?branch:string ->
+val irmin: ?time:time impl -> ?depth:int -> ?branch:string -> ?path:string ->
   stackv4 impl -> string -> kv_ro impl
 (** Create a read-only Irmin store which will be cloned at runtime
-    when the unikernel starts. *)
+    when the unikernel starts.
+
+    {ul
+    {- [depth] is the depth of the cloned history (default is 1);}
+    {- [branch] is the name of the cloned branch (default is ["master"]);}
+    {- [path] is the sub-path to consider the root in the cloned
+        repository (default is [[]]).}
+    } *)
 
 (** {Resolver configuration} *)
 

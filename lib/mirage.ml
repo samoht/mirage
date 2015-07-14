@@ -1784,11 +1784,14 @@ module Irmin_RO = struct
     stack: stackv4 impl;
     tls: bool;
     uri: string;
+    path: string option;
   }
 
   let name t =
     let x =
-      t.uri ^ Impl.name t.time ^ Impl.name t.stack ^ string_of_bool t.tls
+      t.uri ^ Impl.name t.time ^ Impl.name t.stack
+      ^ string_of_bool t.tls
+      ^ match t.path with None -> "" | Some p -> p
     in
     Name.of_key ("Irmin_RO" ^ x) ~base:"irmin_RO"
 
@@ -1827,11 +1830,14 @@ module Irmin_RO = struct
       (module_name t) (name t);
     newline_main ();
     append_main "let %s uri =" (name t);
-    let depth = match t.depth with None -> "None" | Some d -> sp "Some %d" d in
-    let branch = match t.branch with None -> "None" | Some b -> sp "Some %S" b in
+    let mk_int = function None -> "None" | Some d -> sp "Some %d" d in
+    let mk_string = function None -> "None" | Some s -> sp "Some %S" s in
     append_main "  let uri = Uri.of_string %S in" t.uri;
-    append_main "  %s.connect ?depth:%s ?branch:%s uri >|= fun t -> `Ok t"
-      (module_name t) depth branch;
+    append_main "  let depth = %s in" (mk_int t.depth);
+    append_main "  let branch = %s in" (mk_string t.branch);
+    append_main "  let path = %s in" (mk_string t.path);
+    append_main "  %s.connect ?depth ?branch ?path uri >|= fun t -> `Ok t"
+      (module_name t);
     newline_main ()
 
   let clean t = Impl.clean t.stack; Impl.clean t.time
@@ -1842,9 +1848,9 @@ module Irmin_RO = struct
 
 end
 
-let irmin ?(time=default_time) ?depth ?branch stack uri =
+let irmin ?(time=default_time) ?depth ?branch ?path stack uri =
   let tls = match cut_at uri ':' with Some ("https", _) -> true | _ -> false in
-  let t = { Irmin_RO.depth; branch; tls; stack; time; uri } in
+  let t = { Irmin_RO.depth; branch; path; tls; stack; time; uri } in
   impl kv_ro t (module Irmin_RO)
 
 module Resolver_unix = struct
