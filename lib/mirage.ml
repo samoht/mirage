@@ -1001,7 +1001,7 @@ module Arpv4 = struct
     time: time impl;
   }
 
-  let name t = 
+  let name t =
     Name.of_key ("arpv4" ^ Impl.name t.ethernet) ~base:"arpv4"
 
   let module_name t =
@@ -1011,13 +1011,13 @@ module Arpv4 = struct
     "tcpip" :: Impl.packages t.time @ Impl.packages t.clock @ Impl.packages t.ethernet
 
   let libraries t =
-    let arp_library = 
+    let arp_library =
       match !mode with
       | `Unix | `MacOSX -> "tcpip.arpv4-unix"
       | `Xen  -> "tcpip.arpv4"
     in
-    arp_library :: 
-    Impl.libraries t.ethernet @ 
+    arp_library ::
+    Impl.libraries t.ethernet @
     Impl.libraries t.clock @
     Impl.libraries t.ethernet
 
@@ -1025,8 +1025,8 @@ module Arpv4 = struct
     let name = name t in
     let mname = module_name t in
     append_main "module %s = Arpv4.Make(%s)(%s)(%s)" mname
-      (Impl.module_name t.ethernet) 
-      (Impl.module_name t.clock)  
+      (Impl.module_name t.ethernet)
+      (Impl.module_name t.clock)
       (Impl.module_name t.time);
     newline_main ();
     append_main "let %s () =" name;
@@ -1048,8 +1048,8 @@ end
 type arpv4 = Arpv4
 let arpv4 = Type Arpv4
 
-let arp ?(clock = default_clock) ?(time = default_time) (eth : ethernet impl) = impl arpv4 
-    { Arpv4.ethernet = eth; 
+let arp ?(clock = default_clock) ?(time = default_time) (eth : ethernet impl) = impl arpv4
+    { Arpv4.ethernet = eth;
       clock;
       time
     } (module Arpv4)
@@ -1088,7 +1088,7 @@ module IPV4 = struct
     String.capitalize (name t)
 
   let packages t =
-    "tcpip" :: Impl.packages t.arpv4 
+    "tcpip" :: Impl.packages t.arpv4
 
   let libraries t  =
     (match !mode with
@@ -1530,7 +1530,7 @@ module STACKV4_direct = struct
       (Impl.module_name t.network)
       ethif_name arpv4_name ipv4_name udpv4_name tcpv4_name;
     newline_main ();
-    append_main "let %s () =" name;
+    append_main "let %s_l () =" name;
     append_main "  %s () >>= function" (Impl.name t.console);
     append_main "  | `Error _    -> %s"
       (driver_initialisation_error (Impl.name t.console));
@@ -1564,7 +1564,10 @@ module STACKV4_direct = struct
     append_main "  %s.connect ipv4 >>= function" tcpv4_name;
     append_main "  | `Error _ -> %s" (driver_initialisation_error tcpv4_name);
     append_main "  | `Ok tcpv4 ->";
-    append_main "  %s.connect config ethif arpv4 ipv4 udpv4 tcpv4" (module_name t);
+    append_main "  %s.connect config ethif ipv4 udpv4 udpv4 tcpv4" (module_name t);
+    newline_main ();
+    append_main "let %s = let x = lazy (%s_l ()) in fun () -> Lazy.force x"
+      name name;
     newline_main ()
 
   let clean t =
