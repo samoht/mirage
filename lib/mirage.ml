@@ -554,6 +554,7 @@ let network_conf (intf : string Key.key) =
   end
 
 let netif ?group dev = impl (network_conf @@ Key.interface ?group dev)
+
 let default_network =
   match_impl Key.(value target) [
     `Unix   , netif "tap0";
@@ -1711,7 +1712,11 @@ let compile libs warn_error target =
       | `MacOSX | `Unix -> []
     in
     let dont = List.map (fun k -> [ "-dontlink" ; k ]) dontlink in
-    "-g" :: List.flatten dont
+    let static = match target with
+      | `Unix -> ["-cclib"; "-static"]
+      | _     -> []
+    in
+    static @ "-g" :: List.flatten dont
   in
   let concat = String.concat ~sep:"," in
   let cmd = Bos.Cmd.(v "ocamlbuild" % "-use-ocamlfind" %
