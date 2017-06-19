@@ -250,7 +250,22 @@ val default_network: network impl
 val netif: ?group:string -> string -> network impl
 (** A custom network interface. Exposes a {!Key.interface} key. *)
 
+(** {2 Flow} *)
 
+type flow
+(** The type for MirageOS flows. *)
+
+val flow: flow typ
+(** Implemetations of the [Mirage_flow_lwt.S] signature. *)
+
+val rawlink: string -> flow impl
+(** [rawlink i] is the raw interface [i]. For instance [rawlink
+    "eth0"] listens on all traffic on [eth0]. *)
+
+val network_of_flow: flow impl -> network impl
+(** [network_of_flow f] is the network built on top of the flow
+    [f]. For instance, [nertwork_of_flow (rawlink "eth0")] could be
+    used to create a network interface on top of [eth0]. *)
 
 (** {2 Ethernet configuration} *)
 

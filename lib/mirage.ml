@@ -582,6 +582,44 @@ let default_network =
     `MacOSX , netif "tap0";
   ] ~default:(netif "0")
 
+(** flow **)
+
+type flow = FLOW
+let flow = Type FLOW
+
+let network_of_flow_func = impl @@ object
+    inherit base_configurable
+    method ty = flow @-> network
+    method name = "network_of_flow"
+    method module_name = "Mirage_net_flow.Make"
+    method packages = Key.pure [ package "mirage-net-flow" ]
+    method connect _ modname = function
+      | [ fs ] -> Fmt.strf "%s.connect %s" modname fs
+      | _ -> failwith (connect_err "network_of_flow" 1)
+  end
+let network_of_flow flow = network_of_flow_func $ flow
+
+let rawlink intf =
+  let key = Key.abstract (Key.interface intf) in
+  impl @@ object
+    inherit base_configurable
+    method ty = flow
+    val name = Functoria_app.Name.create "flow" ~prefix:"flow"
+    method name = name
+    method module_name = "Mirage_flow_rawlink"
+    method keys = [ key ]
+    method packages =
+      Key.match_ Key.(value target) @@ function
+      | `Unix -> [ package "mirage-flow-rawlink" ]
+      | _ -> []
+    method connect _ modname _ =
+      Fmt.strf "Lwt.return (Lwt_rawlink.open_link %a)" Key.serialize_call key
+    method configure i =
+      match get_target i with
+      | `Unix -> R.ok ()
+      | _     -> R.error_msg "rawlink is not supported on non-UNIX targets."
+  end
+
 type dhcp = Dhcp_client
 let dhcp = Type Dhcp_client
 
