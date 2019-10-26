@@ -108,13 +108,19 @@ include
 module Hooks = struct
   type 'a t = (unit -> 'a) Lwt_dllist.t
 
-  let exit = Lwt_dllist.create ()
-
   let enter_iter = Lwt_dllist.create ()
 
   let leave_iter = Lwt_dllist.create ()
 
   let iter t = Lwt_dllist.iter_l (fun f -> f ()) t
+
+  let exit = Lwt_dllist.create ()
+
+  let rec run_exit_hooks () =
+    let open Lwt.Infix in
+    match Lwt_dllist.take_opt_l exit with
+    | None -> Lwt.return_unit
+    | Some hook -> hook >>= fun () -> run_exit_hooks ()
 end
 
 let at_exit f = ignore (Lwt_dllist.add_l f Hooks.exit)
