@@ -74,12 +74,22 @@ end
 
 include module type of Functoria_runtime with module Arg := Arg
 
+(** {2 Registering hooks in the scheduler} *)
+
 val at_exit : (unit -> unit Lwt.t) -> unit
+(** [at_exit hook] registers [hook], which will be executed before the unikernel
+    exits. The [hook] should not raise an exception, since otherwise all
+    subsequent registered hooks won't be executed. *)
 
 val at_enter_iter : (unit -> unit) -> unit
+(** [at_enter_iter hook] registers [hook] to be executed at the beginning of
+    each event loop iteration. *)
 
 val at_leave_iter : (unit -> unit) -> unit
+(** [at_leave_iter hook] registers [hook] to be executed at the end of each
+    event loop iteration. *)
 
+(** Access to hooks, meant for developers implementing new targets. *)
 module Hooks : sig
 
   (** {2 Hook Sequences} *)
@@ -101,8 +111,4 @@ module Hooks : sig
 
   val iter : unit t -> unit
   (** [iter s] calls the hooks registered in [s] in sequence. *)
-
-  val iter_p : unit Lwt.t t -> unit Lwt.t
-  (** [iter_p s] calls the asynchronous hooks registered in [s] in
-      parallel. *)
 end

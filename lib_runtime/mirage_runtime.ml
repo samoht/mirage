@@ -115,20 +115,6 @@ module Hooks = struct
   let leave_iter = Lwt_dllist.create ()
 
   let iter t = Lwt_dllist.iter_l (fun f -> f ()) t
-
-  let rec iter_p hooks =
-    match Lwt_dllist.take_opt_l hooks with
-    | None -> Lwt.return ()
-    | Some f ->
-        (* Run the hooks in parallel *)
-        let _ =
-          Lwt.catch f (fun exn ->
-              Logs.err (fun l ->
-                  l "Mirage_runtime.Hooks.call: Unhandled exception: %a\n%!"
-                    Fmt.exn exn);
-              Lwt.return ())
-        in
-        iter_p hooks
 end
 
 let at_exit f = ignore (Lwt_dllist.add_l f Hooks.exit)
