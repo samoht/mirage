@@ -73,3 +73,36 @@ module Arg: sig
 end
 
 include module type of Functoria_runtime with module Arg := Arg
+
+val at_exit : (unit -> unit Lwt.t) -> unit
+
+val at_enter_iter : (unit -> unit) -> unit
+
+val at_leave_iter : (unit -> unit) -> unit
+
+module Hooks : sig
+
+  (** {2 Hook Sequences} *)
+
+  type 'a t
+  (** The type for hook sequences, called every time the lwt main loop
+      is running. *)
+
+  val exit : unit Lwt.t t
+  (** [exit] is the sequence of hooks called at process exit. *)
+
+  val enter_iter : unit t
+  (** [enter_iter] is the sequence of hooks called before each
+      iteration of the Lwt main loop. *)
+
+  val leave_iter : unit t
+  (** [leave_iter] is the sequence of hooks called after each
+      iteration of the Lwt main loop. *)
+
+  val iter : unit t -> unit
+  (** [iter s] calls the hooks registered in [s] in sequence. *)
+
+  val iter_p : unit Lwt.t t -> unit Lwt.t
+  (** [iter_p s] calls the asynchronous hooks registered in [s] in
+      parallel. *)
+end
