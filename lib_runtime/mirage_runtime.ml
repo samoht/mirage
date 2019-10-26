@@ -120,7 +120,11 @@ module Hooks = struct
     let open Lwt.Infix in
     match Lwt_dllist.take_opt_l exit with
     | None -> Lwt.return_unit
-    | Some hook -> hook >>= fun () -> run_exit_hooks ()
+    | Some hook ->
+      Lwt.catch
+        (fun () -> hook ())
+        (fun _  -> Lwt.return_unit) >>= fun () ->
+      run_exit_hooks ()
 end
 
 let at_exit f = ignore (Lwt_dllist.add_l f Hooks.exit)
