@@ -95,6 +95,9 @@ module Info: sig
   val build_dir: t -> Fpath.t
   (** Directory in which the build is done. *)
 
+  val build_time: t -> Ptime.t
+  (** The time of build. *)
+
   val libraries: t -> string list
   (** [libraries t] are the direct OCamlfind dependencies. *)
 
@@ -118,7 +121,8 @@ module Info: sig
     keys:Key.t list ->
     context:Key.context ->
     name:string ->
-    build_dir:Fpath.t -> t
+    build_dir:Fpath.t ->
+    build_time:Ptime.t -> t
 
   val pp: bool -> t Fmt.t
 

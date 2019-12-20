@@ -30,7 +30,7 @@ let setup_log =
         $ Fmt_cli.style_renderer ~docs:common_section ()
         $ Logs_cli.level ~docs:common_section ())
 
-let config_file f =
+let config_file =
   let doc =
     Arg.info
       ~docs:configuration_section
@@ -38,10 +38,10 @@ let config_file f =
       ~doc:"The configuration file to use."
       ["f"; "file"]
   in
-  Term.(const (fun x ->  f (Fpath.v x))
+  Term.(const (fun x ->  Fpath.v x)
         $ Arg.(value & opt string "config.ml" & doc))
 
-let build_dir f =
+let build_dir =
   let doc =
     Arg.info
       ~docs:configuration_section
@@ -49,7 +49,27 @@ let build_dir f =
       ~doc:"The directory where the build is done."
       ["b"; "build-dir"]
   in
-  Term.(const (function None -> () | Some x ->  f (Fpath.v x))
+  Term.(const (function None -> None | Some x -> Some (Fpath.v x))
+        $ Arg.(value & opt (some string) None & doc))
+
+let time =
+  let doc =
+    Arg.info
+      ~docs:configuration_section
+      ~docv:"DATE"
+      ~doc:"Fixed timestamp (RFC3339) to use in generated files.\
+            Useful for reproducibility"
+      ["time"]
+  in
+  let of_timestamp s =
+    Ptime.of_rfc3339 ~strict:false s
+    |> Ptime.rfc3339_error_to_msg
+    |> Rresult.R.failwith_error_msg
+    |> fun (t, _, _) -> t
+  in
+  Term.(const (function
+      | None -> None
+      | Some x -> Some (of_timestamp x))
         $ Arg.(value & opt (some string) None & doc))
 
 (**
@@ -137,11 +157,11 @@ let pp_action pp_a ppf = function
   | Help        -> Fmt.string ppf "help"
 
 let setup =
-  let noop _ = () in
-  Term.(const (fun () () () -> ())
+  Term.(const (fun () _ _ _ -> ())
         $ setup_log
-        $ config_file noop
-        $ build_dir noop)
+        $ config_file
+        $ build_dir
+        $ time)
 
 (*
  * Subcommand specifications

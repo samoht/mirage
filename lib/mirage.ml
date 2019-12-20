@@ -184,7 +184,6 @@ let mprof_trace = Mirage_impl_tracing.mprof_trace
 
 (** Functoria devices *)
 
-type info = Functoria_app.info
 let noop = Functoria_app.noop
 let info = Functoria_app.info
 let app_info = Functoria_app.app_info ~type_modname:"Mirage_info" ()
@@ -249,7 +248,7 @@ module Project = struct
 
 end
 
-include Functoria_app.Make (Project)
+include Functoria_app.DSL (Project)
 
 (** {Custom registration} *)
 

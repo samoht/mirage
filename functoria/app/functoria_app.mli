@@ -90,8 +90,6 @@ end
 
 module Make (P: S): sig
 
-  open Functoria.DSL
-
   (** Configuration builder: stage 1 *)
 
   val run: unit -> unit
@@ -105,7 +103,11 @@ module Make (P: S): sig
   (** [run_with_argv a] is the same as {!run} but parses [a] instead
       of the process command line arguments. It also allows to set
       the error and help channels using [help_ppf] and [err_ppf]. *)
+end
 
+module DSL (P: S): sig
+
+  include Functoria.DSL
 
   (** Configuration module: stage 2 *)
 

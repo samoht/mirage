@@ -99,6 +99,7 @@ module Info = struct
     name: string;
     output: string option;
     build_dir: Fpath.t;
+    build_time: Ptime.t;
     keys: Key.Set.t;
     context: Key.context;
     packages: Package.t String.Map.t;
@@ -106,6 +107,7 @@ module Info = struct
 
   let name t = t.name
   let build_dir t = t.build_dir
+  let build_time t = t.build_time
   let output t = t.output
   let with_output t output = { t with output = Some output }
 
@@ -120,7 +122,7 @@ module Info = struct
   let keys t = Key.Set.elements t.keys
   let context t = t.context
 
-  let create ~packages ~keys ~context ~name ~build_dir =
+  let create ~packages ~keys ~context ~name ~build_dir ~build_time =
     let keys = Key.Set.of_list keys in
     let packages = List.fold_left (fun m p ->
         let n = p.opam in
@@ -131,7 +133,7 @@ module Info = struct
           | None -> invalid_arg ("bad version constraints in " ^ p.opam))
         String.Map.empty packages
     in
-    { name; build_dir; keys; packages; context; output = None }
+    { build_time; name; build_dir; keys; packages; context; output = None }
 
   let pp_packages ?(surround = "") ?sep ppf t =
     Fmt.pf ppf "%a" (Fmt.iter ?sep List.iter (Package.pp_package surround)) (packages t)

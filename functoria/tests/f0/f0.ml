@@ -58,7 +58,7 @@ module C = struct
                  let run x = x"
   let name = "test"
   let version = "1.0"
-  let packages = [package "functoria"; package "f0"]
+  let packages = [package "functoria.f0"]
   let ignore_dirs = []
 
   let create jobs = impl @@ object (self)
@@ -112,3 +112,5 @@ module C = struct
 end
 
 include Functoria_app.Make(C)
+
+module DSL = Functoria_app.DSL(C)
