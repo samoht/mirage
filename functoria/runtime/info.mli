@@ -13,8 +13,22 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
-type info = {
-  name: string;
-  libraries: string list;
-  packages: (string * string) list;
-}
+
+(** Information about Functoria applications. *)
+
+type t
+(** The type for information about applications. *)
+
+val v: ?libraries:string list -> ?packages:(string * string) list -> string -> t
+(** [v ?libraries ?packages name] is a value representing application
+    information. *)
+
+val name: t -> string
+(** [name t] is [t]'s name. *)
+
+val libraries: t -> string list
+(** [libraries] is the list of libraries needed by the application. *)
+
+val packages: t -> (string * string) list
+(** [packages t] is the list of package names and versions needed by
+    the application. *)

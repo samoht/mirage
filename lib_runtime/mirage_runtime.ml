@@ -129,3 +129,5 @@ let at_exit f = add f exit_hooks
 let at_leave_iter f = add f leave_iter_hooks
 
 let at_enter_iter f = add f enter_iter_hooks
+
+module Info = Functoria_runtime.Info
