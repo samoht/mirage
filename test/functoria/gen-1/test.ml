@@ -42,9 +42,10 @@ let opam_deps =
 
 let test () =
   let context = Functoria_key.empty_context in
-  let sigs = Functoria.(job @-> info @-> job) in
+  let sigs = Functoria.Type.(job @-> info @-> job) in
   let keys =
-    Functoria.(main "App.Make" sigs $ keys sys_argv $ app_info ~opam_deps ())
+    Functoria.Impl.(
+      main "App.Make" sigs $ keys sys_argv $ app_info ~opam_deps ())
   in
   test_device context keys
 

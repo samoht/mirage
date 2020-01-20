@@ -20,9 +20,6 @@ open Astring
 open Functoria
 include Functoria_misc
 module Graph = Functoria_graph
-module Key = Functoria_key
-module Cli = Functoria_cli
-module Engine = Functoria_engine
 
 let src = Logs.Src.create "functoria" ~doc:"functoria library"
 
@@ -41,9 +38,9 @@ module Config = struct
   type t = {
     name : string;
     build_dir : Fpath.t;
-    packages : package list Key.value;
+    packages : Package.t list Key.value;
     keys : Key.Set.t;
-    init : job impl list;
+    init : Type.job Impl.t list;
     jobs : Graph.t;
   }
 
@@ -98,22 +95,15 @@ module Cache : sig
 
   val clean : Fpath.t -> (unit, [> Rresult.R.msg ]) result
 
-  val get_context :
-    Fpath.t ->
-    context Term.t ->
-    [> `Error of bool * string | `Ok of context option ]
+  val get_context : Fpath.t -> Key.context Term.t -> Key.context option Term.ret
 
-  val get_output : Fpath.t -> [> `Error of bool * string | `Ok of string option ]
+  val get_output : Fpath.t -> string option Term.ret
 
-  val require :
-    [< `Error of bool * string | `Ok of context option ] -> context Term.ret
+  val require : Key.context option Term.ret -> Key.context Term.ret
 
-  val merge :
-    cache:[< `Error of bool * string | `Ok of context option ] ->
-    context ->
-    context
+  val merge : cache:Key.context option Term.ret -> Key.context -> Key.context
 
-  val present : [< `Error of bool * string | `Ok of context option ] -> bool
+  val present : Key.context option Term.ret -> bool
 end = struct
   let filename root = Fpath.((root / ".mirage") + "config")
 
@@ -168,15 +158,18 @@ end = struct
     | `Ok None ->
         `Error (false, "Configuration is not available. Please run configure.")
     | `Ok (Some x) -> `Ok x
+    | `Help h -> `Help h
     | `Error err -> `Error err
 
   let merge ~cache context =
     match cache with
-    | `Ok None | `Error _ -> context
+    | `Ok None | `Error _ | `Help _ -> context
     | `Ok (Some default) -> Key.merge_context ~default context
 
   let present cache =
-    match cache with `Ok None | `Error _ -> false | `Ok (Some _) -> true
+    match cache with
+    | `Ok None | `Error _ | `Help _ -> false
+    | `Ok (Some _) -> true
 end
 
 module type S = sig
@@ -184,13 +177,13 @@ module type S = sig
 
   val name : string
 
-  val packages : package list
+  val packages : Package.t list
 
   val ignore_dirs : string list
 
   val version : string
 
-  val create : job impl list -> job impl
+  val create : Type.job Impl.t list -> Type.job Impl.t
 end
 
 module type DSL = module type of struct
@@ -200,9 +193,9 @@ end
 module Make (P : S) = struct
   type state = { build_dir : Fpath.t option; config_file : Fpath.t }
 
-  let default_init = [ keys sys_argv ]
+  let default_init = Impl.[ keys sys_argv ]
 
-  let init_global_state argv =
+  let state argv =
     ignore (Cmdliner.Term.eval_peek_opts ~argv Cli.setup_log);
     let config_file =
       match Cmdliner.Term.eval_peek_opts ~argv Cli.config_file with
@@ -428,7 +421,7 @@ module Make (P : S) = struct
   let run_with_argv ?help_ppf ?err_ppf argv =
     (* 1. Pre-parse the arguments set the log level, config file
        and root directory. *)
-    let state = init_global_state argv in
+    let state = state argv in
 
     (* 2. Build the config from the config file. *)
     (* There are three possible outcomes:
@@ -640,7 +633,7 @@ module Make (P : S) = struct
   let register ?packages ?keys ?(init = default_init) name jobs =
     (* 1. Pre-parse the arguments set the log level, config file
        and root directory. *)
-    let state = init_global_state Sys.argv in
+    let state = state Sys.argv in
     let build_dir = get_build_dir ~state in
     let main_dev = P.create (init @ jobs) in
     let c = Config.make ?keys ?packages ~init name build_dir main_dev in

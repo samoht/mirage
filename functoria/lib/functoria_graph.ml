@@ -25,8 +25,10 @@
 open Astring
 open Graph
 open Functoria_misc
-open Functoria
 module Key = Functoria_key
+module Device = Functoria_device
+module Impl = Functoria_impl
+module Type = Functoria_type
 
 (* {2 Utility} *)
 
@@ -56,7 +58,7 @@ module If = struct
   let reduce f ~path ~add : path Key.value = Key.(pure (fuse path) $ f $ add)
 end
 
-type label = If of If.path Key.value | Dev : 'a Device.t -> label | App
+type label = If of If.path Key.value | Dev : _ Impl.device -> label | App
 
 type edge_label =
   | Parameter of int
@@ -82,7 +84,7 @@ module Tbl = Hashtbl.Make (G.V)
 let pp_label ppf = function
   | If _ -> Fmt.string ppf "if"
   | App -> Fmt.string ppf "app"
-  | Dev d -> Fmt.pf ppf "dev %a" Device.pp d
+  | Dev d -> Fmt.pf ppf "dev %a" (Device.pp Impl.pp_abstract) d
 
 let pp_vertex ppf v = Fmt.pf ppf "%d:%a" (G.V.hash v) pp_label (G.V.label v)
 
@@ -97,9 +99,9 @@ let impl_name v =
   match G.V.label v with
   | If _ | App -> assert false
   | Dev d -> (
-      match Device.module_type d with
-      | Type _ -> Device.module_name d
-      | _ ->
+      match Type.is_functor (Device.module_type d) with
+      | false -> Device.module_name d
+      | true ->
           let id = G.V.hash v in
           let prefix = String.Ascii.capitalize (nice_name d) in
           Fmt.strf "%s__%d" prefix id )
@@ -189,36 +191,16 @@ let add_app graph ~f ~args =
     |> fold_lefti (fun i -> add_edge v (Parameter i)) args )
 
 let create impl =
-  let module H = ImplTbl in
-  let tbl = H.create 50 in
-  let rec aux : type t. G.t -> t impl -> G.vertex * G.t =
-   fun g impl ->
-    if H.mem tbl @@ abstract impl then (H.find tbl (abstract impl), g)
-    else
-      let v, g =
-        match explode impl with
-        | `Dev c ->
-            let deps, g =
-              List.fold_right
-                (fun (Abstract x) (l, g) ->
-                  let v, g = aux g x in
-                  (v :: l, g))
-                (Device.extra_deps c) ([], g)
-            in
-            add g ~args:[] ~deps c
-        | `If (cond, then_, else_) ->
-            let then_, g = aux g then_ in
-            let else_, g = aux g else_ in
-            add_if g ~cond ~then_ ~else_
-        | `App (Abstract f, Abstract x) ->
-            let f, g = aux g f in
-            let x, g = aux g x in
-            add_app g ~f ~args:[ x ]
-      in
-      H.add tbl (abstract impl) v;
-      (v, g)
+  let g = ref G.empty in
+  let return (v, gr) =
+    g := gr;
+    v
   in
-  snd @@ aux G.empty impl
+  let dev = { Impl.f = (fun d ~deps -> return @@ add !g ~args:[] ~deps d) } in
+  let if_ ~cond ~then_ ~else_ = return @@ add_if !g ~cond ~then_ ~else_ in
+  let app ~f ~x = return @@ add_app !g ~f ~args:[ x ] in
+  let _ = Impl.fold ~dev ~if_ ~app (G.V.create App) impl in
+  !g
 
 let is_impl v = match G.V.label v with Dev _ -> true | App | If _ -> false
 
@@ -251,7 +233,7 @@ let get_children g v =
   assert (is_sequence deps);
   (`Args (List.map snd args), `Deps (List.map snd deps), cond, funct)
 
-type a_device = D : 'a Device.t -> a_device
+type a_device = D : 'a Impl.device -> a_device
 
 let explode g v =
   match (G.V.label v, get_children g v) with

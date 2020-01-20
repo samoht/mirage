@@ -1,17 +1,17 @@
 open Functoria
 module Graph = Functoria_graph
 
-let zero = Device.v "z" Functoria.job
+let zero = Device.v "z" Functoria.Type.job
 
-let x = Device.v "Foo.Bar" Functoria.job
+let x = Device.v "Foo.Bar" Functoria.Type.job
 
-let y = Device.v "X.Y" Functoria.(job @-> job)
+let y = Device.v "X.Y" Functoria.Type.(job @-> job)
 
-let z = Device.v "Bar" job
+let z = Device.v "Bar" Type.job
 
 let apply f d =
   let id = Device.id d in
-  let g = Graph.create (of_device d) in
+  let g = Graph.create (Impl.of_device d) in
   let v =
     match
       Graph.find_all g (function Graph.Dev d -> Device.id d = id | _ -> false)
@@ -41,17 +41,17 @@ let test_impl_name () =
   Alcotest.(check string) "y" (ident "X_y" id 2) (impl_name y);
   Alcotest.(check string) "z" "Bar" (impl_name z)
 
-let d1 = Device.v ~packages:[ package "a" ] "Foo.Bar" job
+let d1 = Device.v ~packages:[ Package.v "a" ] "Foo.Bar" Type.job
 
-let d2 = Device.v ~packages:[ package "b" ] "Foo.Bar" job
+let d2 = Device.v ~packages:[ Package.v "b" ] "Foo.Bar" Type.job
 
-let i1 = of_device d1
+let i1 = Impl.of_device d1
 
-let i2 = of_device d2
+let i2 = Impl.of_device d2
 
-let if1 = if_impl (Functoria_key.pure true) i1 i2
+let if1 = Impl.if_ (Functoria_key.pure true) i1 i2
 
-let if2 = if_impl (Functoria_key.pure true) i2 i1
+let if2 = Impl.if_ (Functoria_key.pure true) i2 i1
 
 let normalise_lines str =
   let open Astring in

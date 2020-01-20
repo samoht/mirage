@@ -15,11 +15,35 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
 
-module Type = Functoria_type
-module Impl = Functoria_impl
-module Info = Functoria_info
-module Device = Functoria_device
-module Key = Functoria_key
-module Package = Functoria_package
-module Engine = Functoria_engine
-module Cli = Functoria_cli
+type _ t =
+  | Type : 'a -> 'a t (* module type *)
+  | Function : 'a t * 'b t -> ('a -> 'b) t
+
+let v x = Type x
+
+let ( @-> ) f x = Function (f, x)
+
+let rec pp : type a. a t Fmt.t =
+ fun ppf -> function
+  | Type _ -> Fmt.string ppf "_"
+  | Function (a, b) -> Fmt.pf ppf "(%a -> %a)" pp a pp b
+
+type job = JOB
+
+let job = Type JOB
+
+(* Default argv *)
+
+type argv = ARGV
+
+let argv = Type ARGV
+
+(* Keys *)
+
+type info = INFO
+
+let info = Type INFO
+
+let is_functor : type a. a t -> bool = function
+  | Type _ -> false
+  | Function _ -> true

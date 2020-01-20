@@ -16,7 +16,9 @@
 
 (** Implementation Graphs. *)
 
-open Functoria
+module Key = Functoria_key
+module Device = Functoria_device
+module Impl = Functoria_impl
 
 type t
 
@@ -29,11 +31,11 @@ module If : sig
 end
 
 (** The description of a vertex *)
-type label = If of If.path value | Dev : 'a Device.t -> label | App
+type label = If of If.path Key.value | Dev : _ Impl.device -> label | App
 
 module Tbl : Hashtbl.S with type key = vertex
 
-val create : _ impl -> t
+val create : _ Impl.t -> t
 (** [create impl] creates a graph based [impl]. *)
 
 val normalize : t -> t
@@ -42,7 +44,7 @@ val normalize : t -> t
 val simplify : t -> t
 (** [simplify g] simplifies the graph so that it's easier to read for humans. *)
 
-val eval : ?partial:bool -> context:context -> t -> t
+val eval : ?partial:bool -> context:Key.context -> t -> t
 (** [eval ~keys g] will removes all the [If] vertices by resolving the keys
     using [keys]. It will then call {!normalize}
 
@@ -61,7 +63,7 @@ val find_all : t -> (label -> bool) -> vertex list
 val find_root : t -> vertex
 (** [find_root g] returns the only vertex of [g] that has no predecessors. *)
 
-type a_device = D : 'a Device.t -> a_device
+type a_device = D : _ Impl.device -> a_device
 
 val device : vertex -> a_device option
 
@@ -73,7 +75,7 @@ val explode :
   t ->
   vertex ->
   [ `App of vertex * vertex list
-  | `If of If.path value * (If.path * vertex) list
+  | `If of If.path Key.value * (If.path * vertex) list
   | `Dev of a_device * [> `Args of vertex list ] * [> `Deps of vertex list ] ]
 (** [explode g v] deconstructs the vertex [v] in the graph [g] into it's
     possible components. It also checks that the local invariants are respected. *)

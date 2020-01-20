@@ -56,7 +56,7 @@ module C = struct
 
   let version = "1.0"
 
-  let packages = [ Functoria.package "functoria"; Functoria.package "f0" ]
+  let packages = Functoria.Package.[ v "functoria"; v "f0" ]
 
   let ignore_dirs = []
 
@@ -104,10 +104,10 @@ module C = struct
       (Ok ()) keys
 
   let create jobs =
-    let packages = Functoria.[ package "fmt" ] in
-    let extra_deps = List.map Functoria.abstract jobs in
-    Functoria.impl ~keys ~packages ~configure ~connect ~clean ~build ~extra_deps
-      "F0" Functoria.job
+    let packages = Functoria.[ Package.v "fmt" ] in
+    let extra_deps = List.map Functoria_impl.abstract jobs in
+    Functoria.Impl.v ~keys ~packages ~configure ~connect ~clean ~build
+      ~extra_deps "F0" Functoria.Type.job
 end
 
 include Functoria_app.Make (C)

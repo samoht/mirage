@@ -20,9 +20,12 @@
 open Rresult
 module Key = Functoria_key
 module Package = Functoria_package
+module Impl = Functoria_impl
+module Info = Functoria_info
+module Graph = Functoria_graph
 
-type t = Functoria_graph.t
-(** The type for key graphs. *)
+type t = Graph.t
+(** The type for engine state. *)
 
 val if_keys : t -> Key.Set.t
 (** [if_keys t] is the set of [if] keys in the graph [t]. *)
@@ -35,20 +38,20 @@ val packages : t -> Package.t list Key.value
 
 (** {2 Triggering Hooks} *)
 
-val configure : Functoria.Info.t -> t -> (unit, R.msg) result
+val configure : Info.t -> t -> (unit, R.msg) result
 (** [configure i t] calls all the configuration hooks for each of the
     implementations appearing in [t], in topological order. Use the build
     information [i]. *)
 
-val connect : ?init:'a Functoria.impl list -> Functoria.Info.t -> t -> unit
+val connect : ?init:'a Impl.t list -> Info.t -> t -> unit
 (** [connect ?init i t] generates the [connect] functions in [main.ml], for each
     of the implementations appearing [t], in topological order. Use build
     information [i]. *)
 
-val build : Functoria.Info.t -> t -> (unit, R.msg) result
+val build : Info.t -> t -> (unit, R.msg) result
 (** [build i t] calls the build hooks for each of the implementations appearing
     in [t], in topological order. Use the build information [i]. *)
 
-val clean : Functoria.Info.t -> t -> (unit, R.msg) result
+val clean : Info.t -> t -> (unit, R.msg) result
 (** [clean i t] calls the clean hooks for each of the implementations appearing
     in [t], in topological order. Use the build information [i]. *)

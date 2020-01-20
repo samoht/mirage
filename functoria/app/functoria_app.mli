@@ -17,12 +17,12 @@
 
 (** Application builder. *)
 
+open Functoria
+
 (** {1 Builders} *)
 
 (** [S] is the signature that application builders have to provide. *)
 module type S = sig
-  open Functoria
-
   val prelude : string
   (** Prelude printed at the beginning of [main.ml].
 
@@ -35,7 +35,7 @@ module type S = sig
   val name : string
   (** Name of the custom DSL. *)
 
-  val packages : package list
+  val packages : Package.t list
   (** The packages to load when compiling the configuration file. *)
 
   val ignore_dirs : string list
@@ -44,14 +44,12 @@ module type S = sig
   val version : string
   (** Version of the custom DSL. *)
 
-  val create : job impl list -> job impl
+  val create : Type.job Impl.t list -> Type.job Impl.t
   (** [create jobs] is the top-level job in the custom DSL which will execute
       the given list of [job]. *)
 end
 
 module Make (P : S) : sig
-  open Functoria
-
   (** Configuration builder: stage 1 *)
 
   val run : unit -> unit
@@ -71,11 +69,11 @@ module Make (P : S) : sig
   (** Configuration module: stage 2 *)
 
   val register :
-    ?packages:package list ->
-    ?keys:abstract_key list ->
-    ?init:job impl list ->
+    ?packages:Package.t list ->
+    ?keys:Key.t list ->
+    ?init:Type.job Impl.t list ->
     string ->
-    job impl list ->
+    Type.job Impl.t list ->
     unit
   (** [register name jobs] registers the application named by [name] which will
       execute the given [jobs]. Same optional arguments as {!Functoria.foreign}.
@@ -85,21 +83,13 @@ module Make (P : S) : sig
       always executed in the sequence specified by the caller. *)
 end
 
-(** The signature of Functoria-like DSLs. *)
-module type DSL = module type of struct
-  include Functoria
-end
-
 (** {1 Misc} *)
 
 (** Code generation helpers. *)
 module Codegen : sig
   val generated_header : ?argv:string array -> unit -> string
 
-  val append :
-    Format.formatter ->
-    ('a, Format.formatter, unit, unit, unit, unit) format6 ->
-    'a
+  val append : Format.formatter -> ('a, Format.formatter, unit) format -> 'a
 
   val newline : Format.formatter -> unit
 

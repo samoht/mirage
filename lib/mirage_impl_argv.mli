@@ -1,3 +1,5 @@
-val default_argv : Functoria.argv Functoria.impl
+open Functoria
 
-val no_argv : Functoria.argv Functoria.impl
+val default_argv : Type.argv Impl.t
+
+val no_argv : Type.argv Impl.t
