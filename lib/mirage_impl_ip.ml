@@ -9,17 +9,17 @@ open Mirage_impl_qubesdb
 open Mirage_impl_random
 open Mirage_impl_time
 
-type v4
+type v4 = [ `V4 ]
 
-type v6
+type v6 = [ `V6 ]
 
-type 'a ip = IP
+type 'a ip = [ v4 | v6 | `Any ]
 
 type ipv4 = v4 ip
 
 type ipv6 = v6 ip
 
-let ip = Type IP
+let ip : 'a ip typ = Type.v `Any
 
 let ipv4 : ipv4 typ = ip
 

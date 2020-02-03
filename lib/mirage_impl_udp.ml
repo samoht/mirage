@@ -5,13 +5,13 @@ open Mirage_impl_ip
 open Mirage_impl_misc
 open Mirage_impl_random
 
-type 'a udp = UDP
+type 'a udp = [ `V4 | `V6 | `Any ]
 
 type udpv4 = v4 udp
 
 type udpv6 = v6 udp
 
-let udp = Type UDP
+let udp = Type.v `Any
 
 let udpv4 : udpv4 typ = udp
 

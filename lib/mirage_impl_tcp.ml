@@ -6,13 +6,13 @@ open Mirage_impl_misc
 open Mirage_impl_random
 open Mirage_impl_time
 
-type 'a tcp = TCP
+type 'a tcp = [ `V4 | `V6 | `Any ]
 
 type tcpv4 = v4 tcp
 
 type tcpv6 = v6 tcp
 
-let tcp = Type TCP
+let tcp = Type.v `Any
 
 let tcpv4 : tcpv4 typ = tcp
 
