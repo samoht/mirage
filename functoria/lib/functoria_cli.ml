@@ -101,7 +101,12 @@ let kind =
     Arg.info ~docs:configuration_section ~docv:"INFO" []
       ~doc:"The information to query."
   in
-  Arg.(value & pos 0 (enum [ ("libraries", `Libraries) ]) `Libraries & doc)
+  Arg.(
+    value
+    & pos 0
+        (enum [ ("libraries", `Libraries); ("packages", `Packages) ])
+        `Libraries
+    & doc)
 
 type 'a describe_args = {
   result : 'a;
@@ -112,7 +117,9 @@ type 'a describe_args = {
 
 type 'a configure_args = { result : 'a; output : string option }
 
-type 'a query_args = { kind : [ `Libraries ]; result : 'a }
+type kind = [ `Libraries | `Packages ]
+
+type 'a query_args = { kind : kind; result : 'a }
 
 type 'a action =
   | Configure of 'a configure_args
@@ -130,7 +137,9 @@ let pp_configure pp_a ppf (c : 'a configure_args) =
     Fmt.(option string)
     c.output
 
-let pp_kind ppf = function `Libraries -> Fmt.string ppf "libraries"
+let pp_kind ppf = function
+  | `Libraries -> Fmt.string ppf "libraries"
+  | `Packages -> Fmt.string ppf "packages"
 
 let pp_query pp_a ppf (q : 'a query_args) =
   Fmt.pf ppf "@[kind:%a@;result:%a@]" pp_kind q.kind pp_a q.result

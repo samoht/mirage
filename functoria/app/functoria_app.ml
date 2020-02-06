@@ -548,8 +548,12 @@ module Make (P : S) = struct
   let query i = function
     | `Libraries ->
         let libs = Functoria_info.libraries i in
-        List.iter (Fmt.pr "%s\n") libs;
-        Ok ()
+        List.iter (Fmt.pr "%s\n") libs
+    | `Packages ->
+        let pkgs = Functoria_info.packages i in
+        List.iter
+          (fun p -> Fmt.pr "%a\n%!" (Functoria_package.pp ~surround:"\"") p)
+          pkgs
 
   let build ~state i jobs =
     Log.info (fun m -> m "Building: %a" Fpath.pp state.config_file);
@@ -590,7 +594,7 @@ module Make (P : S) = struct
         exit_err (build ~state info jobs)
     | `Ok (Cli.Query { result = _, info; kind }) ->
         Log.info (fun m -> Config'.pp_info m (Some Logs.Debug) info);
-        exit_err (query info kind)
+        query info kind
     | `Ok (Cli.Describe { result = jobs, info; dotcmd; dot; output }) ->
         Config'.pp_info Fmt.(pf stdout) (Some Logs.Info) info;
         R.error_msg_to_invalid_arg (describe info jobs ~dotcmd ~dot ~output)
