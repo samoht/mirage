@@ -17,9 +17,10 @@
  *)
 
 open Functoria
-module Type = Functoria.Type
-module Impl = Functoria.Impl
-module Info = Functoria.Info
+module Type = Type
+module Impl = Impl
+module Info = Info
+module Dune = Dune
 module Key = Mirage_key
 module Log = Mirage_impl_misc.Log
 include Functoria.DSL
@@ -298,10 +299,6 @@ let app_info = app_info_partial ()
 
 let app_info_with_opam_deps opam_list = app_info_partial ~opam_list ()
 
-open Mirage_configure
-open Mirage_build
-open Mirage_clean
-
 module Project = struct
   let name = "mirage"
 
@@ -315,27 +312,19 @@ module Project = struct
   (* The ocamlfind packages to use when compiling config.ml *)
   let packages = [ package "mirage" ]
 
-  let bin ~name = function
-    | #Mirage_key.mode_solo5 as tgt ->
-        let ext = snd (Mirage_configure_solo5.solo5_pkg tgt) in
-        let file = Fpath.v (name ^ ext) in
-        (file, file)
-    | #Mirage_key.mode_unix ->
-        (Fpath.((v "_build" / "main") + "native"), Fpath.v name)
-    | #Mirage_key.mode_xen ->
-        let file = Fpath.(v name + "xen") in
-        (file, file)
+  let todo _ = failwith "TODO"
 
-  let etc ~name =
-    let libvirt = Mirage_configure_libvirt.filename ~name in
-    function
-    | `Xen -> Fpath.[ v name + "xl"; v name + "xl.in"; v name + "xe"; libvirt ]
-    | `Virtio -> [ libvirt ]
-    | _ -> []
+  let configure i =
+    match Info.get i Key.target with
+    | #Mirage_key.mode_solo5 -> Mirage_solo5.configure i
+    | #Mirage_key.mode_xen -> Mirage_xen.configure i
+    | #Mirage_key.mode_unix -> Mirage_unix.configure i
 
-  let install i k =
-    let name = match Info.output i with None -> Info.name i | Some n -> n in
-    Install.v ~bin:[ bin ~name k ] ~etc:(etc ~name k) ()
+  let build i =
+    match Info.get i Key.target with
+    | #Mirage_key.mode_solo5 -> Mirage_solo5.build i
+    | #Mirage_key.mode_xen -> Mirage_xen.build i
+    | #Mirage_key.mode_unix -> Mirage_unix.build i
 
   let create jobs =
     let keys = Key.[ v target; v warn_error; v target_debug ] in
@@ -359,16 +348,14 @@ module Project = struct
       | #Mirage_key.mode_xen ->
           package ~min:"5.0.0" ~max:"6.0.0" "mirage-xen" :: common
       | #Mirage_key.mode_solo5 as tgt ->
-          package ~min:"0.6.0" ~max:"0.7.0" ~libs:[]
-            (fst (Mirage_configure_solo5.solo5_pkg tgt))
+          package ~min:"0.6.0" ~max:"0.7.0" ~libs:[] (fst (todo tgt))
           :: package ~min:"0.6.1" ~max:"0.7.0" "mirage-solo5"
           :: common
     in
-    let install_v i = Key.match_ Key.(value target) (install i) in
     let extra_deps = List.map abstract jobs in
     let connect _ _ _ = "return ()" in
-    impl ~keys ~packages_v ~install_v ~build ~configure ~clean ~connect
-      ~extra_deps "Mirage_runtime" job
+    impl ~keys ~packages_v ~build ~configure ~connect ~extra_deps
+      "Mirage_runtime" job
 end
 
 include Lib.Make (Project)
@@ -387,12 +374,11 @@ let ( ++ ) acc x =
   | Some acc, Some x -> Some (acc @ [ x ])
 
 let register ?(argv = default_argv) ?tracing ?(reporter = default_reporter ())
-    ?keys:extra_keys ?packages name jobs =
+    ?keys:extra_keys ?packages ?src name jobs =
   let argv = Some [ keys argv ] in
   let reporter = if reporter == no_reporter then None else Some reporter in
   let init = argv ++ reporter ++ tracing in
-  register ?keys:extra_keys ?packages ?init name jobs
+  register ?keys:extra_keys ?packages ?init ?src name jobs
 
 module FS = Mirage_impl_fs
-module Configure = Mirage_configure
 module Action = Functoria.Action

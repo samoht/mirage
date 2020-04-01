@@ -12,11 +12,12 @@ let default_qubesdb =
   let packages = [ pkg ] in
   let configure i =
     match get_target i with
-    | `Qubes | `Xen -> Action.ok ()
+    | `Qubes | `Xen -> ([], Action.ok ())
     | _ ->
-        Action.error
-          "Qubes DB invoked for an unsupported target; qubes and xen are \
-           supported"
+        ( [],
+          Action.error
+            "Qubes DB invoked for an unsupported target; qubes and xen are \
+             supported" )
   in
   let connect _ modname _args = Fmt.strf "%s.connect ~domid:0 ()" modname in
   impl ~packages ~configure ~connect "Qubes.DB" qubesdb

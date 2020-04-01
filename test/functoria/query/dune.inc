@@ -55,24 +55,6 @@
 
 (rule
  (action
-  (with-stdout-to install
-  (with-stderr-to install.err
-   (run ./config.exe query install)))))
-
-(rule
- (alias runtest)
- (package functoria)
- (action
-  (diff install.expected install)))
-
-(rule
- (alias runtest)
- (package functoria)
- (action
-  (diff install.err.expected install.err)))
-
-(rule
- (action
   (with-stdout-to files-configure
   (with-stderr-to files-configure.err
    (run ./config.exe query files-configure)))))
@@ -214,3 +196,57 @@
  (package functoria)
  (action
   (diff version.err.expected version.err)))
+
+(rule
+ (action
+  (with-stdout-to dune-base
+  (with-stderr-to dune-base.err
+   (run ./config.exe query dune-base)))))
+
+(rule
+ (alias runtest)
+ (package functoria)
+ (action
+  (diff dune-base.expected dune-base)))
+
+(rule
+ (alias runtest)
+ (package functoria)
+ (action
+  (diff dune-base.err.expected dune-base.err)))
+
+(rule
+ (action
+  (with-stdout-to dune-configure
+  (with-stderr-to dune-configure.err
+   (run ./config.exe query dune-configure)))))
+
+(rule
+ (alias runtest)
+ (package functoria)
+ (action
+  (diff dune-configure.expected dune-configure)))
+
+(rule
+ (alias runtest)
+ (package functoria)
+ (action
+  (diff dune-configure.err.expected dune-configure.err)))
+
+(rule
+ (action
+  (with-stdout-to dune-build
+  (with-stderr-to dune-build.err
+   (run ./config.exe query dune-build)))))
+
+(rule
+ (alias runtest)
+ (package functoria)
+ (action
+  (diff dune-build.expected dune-build)))
+
+(rule
+ (alias runtest)
+ (package functoria)
+ (action
+  (diff dune-build.err.expected dune-build.err)))

@@ -16,7 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
 
-open Action.Infix
 open Astring
 
 type abstract_key = Key.t
@@ -25,20 +24,23 @@ type package = Package.t
 
 type info = Info.t
 
-type 'a value = 'a Key.value
+type effect = Dune.stanza list * unit Action.t
+
+type 'a code = string
 
 type ('a, 'impl) t = {
+  (* static *)
   id : int;
   module_name : string;
   module_type : 'a Type.t;
   keys : abstract_key list;
-  packages : package list value;
-  install : info -> Install.t value;
-  connect : info -> string -> string list -> string;
-  configure : info -> unit Action.t;
-  build : info -> unit Action.t;
-  clean : info -> unit Action.t;
   extra_deps : 'impl list;
+  (* needed to build an [info] so needs to be an 'a value. *)
+  packages : package list Key.value;
+  (* dymamic *)
+  connect : info -> string -> string list -> 'a code;
+  configure : info -> effect;
+  build : info -> effect;
 }
 
 let pp : type a b. b Fmt.t -> (a, b) t Fmt.t =
@@ -50,8 +52,6 @@ let pp : type a b. b Fmt.t -> (a, b) t Fmt.t =
       field "module_name" (fun t -> t.module_name) string;
       field "module_type" (fun t -> t.module_type) Type.pp;
       field "keys" (fun t -> t.keys) (list Key.pp);
-      field "install" (fun _ -> "<dyn>") Fmt.string;
-      field "packages" (fun _ -> "<dyn>") Fmt.string;
       field "extra_deps" (fun t -> t.extra_deps) (list pp_impl);
     ]
   in
@@ -64,10 +64,6 @@ let hash x = x.id
 let default_connect _ _ l =
   Printf.sprintf "return (%s)" (String.concat ~sep:", " l)
 
-let niet _ = Action.ok ()
-
-type 'a code = string
-
 let merge empty union a b =
   match (a, b) with
   | None, None -> Key.pure empty
@@ -77,23 +73,19 @@ let merge empty union a b =
 
 let merge_packages = merge [] List.append
 
-let merge_install = merge Install.empty Install.union
-
 let count =
   let i = ref 0 in
   fun () ->
     incr i;
     !i
 
-let v ?packages ?packages_v ?install ?install_v ?(keys = []) ?(extra_deps = [])
-    ?(connect = default_connect) ?(configure = niet) ?(build = niet)
-    ?(clean = niet) module_name module_type =
-  let id = count () in
+let niet _ = ([], Action.ok ())
+
+let v ?packages ?packages_v ?(keys = []) ?(extra_deps = [])
+    ?(connect = default_connect) ?(configure = niet) ?(build = niet) module_name
+    module_type =
   let packages = merge_packages packages packages_v in
-  let install i =
-    let aux = function None -> None | Some f -> Some (f i) in
-    merge_install (aux install) (aux install_v)
-  in
+  let id = count () in
   {
     module_type;
     id;
@@ -101,8 +93,6 @@ let v ?packages ?packages_v ?install ?install_v ?(keys = []) ?(extra_deps = [])
     keys;
     connect;
     packages;
-    install;
-    clean;
     configure;
     build;
     extra_deps;
@@ -116,15 +106,11 @@ let module_type t = t.module_type
 
 let packages t = t.packages
 
-let install t = t.install
-
 let connect t = t.connect
 
 let configure t = t.configure
 
 let build t = t.build
-
-let clean t = t.clean
 
 let keys t = t.keys
 
@@ -133,18 +119,15 @@ let extra_deps t = t.extra_deps
 let start impl_name args =
   Fmt.strf "@[%s.start@ %a@]" impl_name Fmt.(list ~sep:sp string) args
 
-let exec_hook i = function None -> Action.ok () | Some h -> h i
-
-let extend ?packages ?packages_v ?pre_configure ?post_configure ?pre_build
-    ?post_build ?pre_clean ?post_clean t =
-  let packages =
-    Key.(pure List.append $ merge_packages packages packages_v $ t.packages)
-  in
+let extend ?packages ?packages_v ?(pre_configure = niet)
+    ?(post_configure = niet) ?(pre_build = niet) ?(post_build = niet) t =
+  let packages = merge_packages packages packages_v in
   let exec pre f post i =
-    exec_hook i pre >>= fun () ->
-    f i >>= fun () -> exec_hook i post
+    let dune, f = f i in
+    let pre_dune, pre_f = pre i in
+    let post_dune, post_f = post i in
+    (pre_dune @ dune @ post_dune, Action.seq [ pre_f; f; post_f ])
   in
   let configure = exec pre_configure t.configure post_configure in
   let build = exec pre_build t.build post_build in
-  let clean = exec pre_clean t.clean post_clean in
-  { t with packages; configure; build; clean }
+  { t with packages; configure; build }

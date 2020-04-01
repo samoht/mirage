@@ -42,6 +42,7 @@ let test_configure () =
                output = None;
                config_file = Fpath.v "config.ml";
                dry_run = false;
+               setup = [ "--verbose" ];
              };
          }))
     result
@@ -77,6 +78,7 @@ let test_describe () =
                output = None;
                config_file = Fpath.v "config.ml";
                dry_run = false;
+               setup = [ "--color"; "always" ];
              };
            dotcmd = "dot";
            dot = false;
@@ -106,6 +108,7 @@ let test_build () =
            output = None;
            config_file = Fpath.v "config.ml";
            dry_run = false;
+           setup = [ "-v"; "-v"; "--color"; "never" ];
          }))
     result
 
@@ -130,6 +133,7 @@ let test_clean () =
            output = None;
            config_file = Fpath.v "config.ml";
            dry_run = false;
+           setup = [];
          }))
     result
 

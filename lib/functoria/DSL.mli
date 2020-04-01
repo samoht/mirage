@@ -106,6 +106,9 @@ val package :
     The builder is in charge if parsing the command-line arguments and of
     generating code for the final application. See {!App} for details. *)
 
+type info = Info.t
+(** The type for build information. *)
+
 val foreign :
   ?packages:package list ->
   ?packages_v:package list Key.value ->
@@ -142,17 +145,16 @@ type 'a device = ('a, Impl.abstract) Device.t
 val of_device : 'a device -> 'a impl
 (** [of_device t] is the implementation device [t]. *)
 
+type effect = Device.effect
+
 val impl :
   ?packages:package list ->
-  ?packages_v:package list Key.value ->
-  ?install:(Info.t -> Install.t) ->
-  ?install_v:(Info.t -> Install.t Key.value) ->
+  ?packages_v:package list value ->
   ?keys:Key.t list ->
   ?extra_deps:Impl.abstract list ->
-  ?connect:(Info.t -> string -> string list -> string) ->
-  ?configure:(Info.t -> unit Action.t) ->
-  ?build:(Info.t -> unit Action.t) ->
-  ?clean:(Info.t -> unit Action.t) ->
+  ?connect:(info -> string -> string list -> string) ->
+  ?configure:(info -> effect) ->
+  ?build:(info -> effect) ->
   string ->
   'a typ ->
   'a impl
@@ -161,5 +163,3 @@ val impl :
 (** {1 Jobs} *)
 
 type job = Job.t
-
-type info = Info.t

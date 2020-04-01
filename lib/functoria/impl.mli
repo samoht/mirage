@@ -53,9 +53,8 @@ val v :
   ?keys:Key.t list ->
   ?extra_deps:abstract list ->
   ?connect:(Info.t -> string -> string list -> string) ->
-  ?configure:(Info.t -> unit Action.t) ->
-  ?build:(Info.t -> unit Action.t) ->
-  ?clean:(Info.t -> unit Action.t) ->
+  ?configure:(Info.t -> Device.effect) ->
+  ?build:(Info.t -> Device.effect) ->
   string ->
   'a Type.t ->
   'a t

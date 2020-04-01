@@ -26,12 +26,13 @@ let mprof_trace ~size () =
         ]
   in
   let build _ =
-    query_ocamlfind [ "lwt.tracing" ] >>= function
-    | [] ->
-        Action.error
-          "lwt.tracing module not found. Hint:opam pin add lwt \
-           https://github.com/mirage/lwt.git#tracing"
-    | _ -> Action.ok ()
+    ( [],
+      query_ocamlfind [ "lwt.tracing" ] >>= function
+      | [] ->
+          Action.error
+            "lwt.tracing module not found. Hint:opam pin add lwt \
+             https://github.com/mirage/lwt.git#tracing"
+      | _ -> Action.ok () )
   in
   let connect i _ _ =
     match get_target i with

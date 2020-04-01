@@ -30,25 +30,18 @@ val all_keys : t -> Key.Set.t
 val packages : t -> Package.t list Key.value
 (** [packages t] is the set of packages in the graph [t]. *)
 
-val install : Info.t -> t -> Install.t Key.value
-(** [install i t] is the set of files installed by the graph [t]. *)
-
 (** {2 Triggering Hooks} *)
-
-val configure : Info.t -> t -> unit Action.t
-(** [configure i t] calls all the configuration hooks for each of the
-    implementations appearing in [t], in topological order. Use the build
-    information [i]. *)
 
 val connect : ?init:'a Impl.t list -> Info.t -> t -> unit Action.t
 (** [connect ?init i t] generates the [connect] functions in [main.ml], for each
     of the implementations appearing [t], in topological order. Use build
     information [i]. *)
 
-val build : Info.t -> t -> unit Action.t
-(** [build i t] calls the build hooks for each of the implementations appearing
-    in [t], in topological order. Use the build information [i]. *)
+val configure : Info.t -> t -> Device.effect
+(** [configure i t] calls all the configuration hooks for each of the
+    implementations appearing in [t], in topological order. Use the build
+    information [i]. *)
 
-val clean : Info.t -> t -> unit Action.t
-(** [clean i t] calls the clean hooks for each of the implementations appearing
+val build : Info.t -> t -> Device.effect
+(** [build i t] calls the build hooks for each of the implementations appearing
     in [t], in topological order. Use the build information [i]. *)

@@ -47,20 +47,6 @@ let packages =
   | Dev c -> Device.packages c
   | If _ | App -> Packages.empty
 
-module Installs = struct
-  type t = Install.t Key.value
-
-  let union x y = Key.(pure Install.union $ x $ y)
-
-  let empty = Key.pure Install.empty
-end
-
-let install i =
-  let open Device_graph in
-  Device_graph.collect (module Installs) @@ function
-  | Dev c -> Device.install c i
-  | If _ | App -> Installs.empty
-
 (* [module_expresion tbl c args] returns the module expression of
    the functor [c] applies to [args]. *)
 let module_expression fmt (c, args) =
@@ -77,6 +63,13 @@ let find_all_devices info g i =
   in
   Device_graph.find_all g p
 
+let iter_effects f t =
+  let f v (dune, actions) =
+    let d, a = f v in
+    (d @ dune, actions >>= fun () -> a)
+  in
+  Device_graph.fold f t ([], Action.ok ())
+
 let iter_actions f t =
   let f v res = res >>= fun () -> f v in
   Device_graph.fold f t (Action.ok ())
@@ -87,7 +80,7 @@ let build info t =
     | `App _ | `If _ -> assert false
     | `Dev (Device_graph.D c, _, _) -> Device.build c info
   in
-  iter_actions f t
+  iter_effects f t
 
 let append_main i msg fmt =
   let path = Info.main i in
@@ -103,13 +96,15 @@ let configure info t =
     match Device_graph.explode t v with
     | `App _ | `If _ -> assert false
     | `Dev (Device_graph.D c, `Args args, `Deps _) ->
-        Device.configure c info >>= fun () ->
-        if args = [] then Action.ok ()
-        else
-          append_main info "configure" "@[<2>module %s =@ %a@]@."
-            (Device_graph.impl_name v) module_expression (c, args)
+        let dune, action = Device.configure c info in
+        ( dune,
+          action >>= fun () ->
+          if args = [] then Action.ok ()
+          else
+            append_main info "configure" "@[<2>module %s =@ %a@]@."
+              (Device_graph.impl_name v) module_expression (c, args) )
   in
-  iter_actions f t
+  iter_effects f t
 
 let meta_init fmt (connect_name, result_name) =
   Fmt.pf fmt "let _%s =@[@ Lazy.force %s @]in@ " result_name connect_name
@@ -156,11 +151,3 @@ let connect ?(init = []) info t =
     |> List.rev
   in
   emit_run info init_names main_name
-
-let clean i t =
-  let f v =
-    match Device_graph.explode t v with
-    | `App _ | `If _ -> assert false
-    | `Dev (Device_graph.D c, _, _) -> Device.clean c i
-  in
-  iter_actions f t

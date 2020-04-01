@@ -33,6 +33,9 @@ module type S = sig
       - a [return] function of type ['a -> 'a t]
       - a [>>=] operator of type ['a t -> ('a -> 'b t) -> 'b t] *)
 
+  val packages : Package.t list
+  (** The packages to load when compiling the configuration file. *)
+
   val name : string
   (** Name of the custom DSL. *)
 

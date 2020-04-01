@@ -19,17 +19,16 @@ let crunch dirname =
   let build _i =
     let dir = Fpath.(v dirname) in
     let file = Fpath.(v (String.Ascii.lowercase name) + "ml") in
-    Action.is_dir dir >>= function
-    | true ->
-        Mirage_impl_misc.Log.info (fun m -> m "Generating: %a" Fpath.pp file);
-        Action.run_cmd Bos.Cmd.(v "ocaml-crunch" % "-o" % p file % p dir)
-    | false -> Action.errorf "The directory %s does not exist." dirname
+    let action =
+      Action.is_dir dir >>= function
+      | true ->
+          Mirage_impl_misc.Log.info (fun m -> m "Generating: %a" Fpath.pp file);
+          Action.run_cmd Bos.Cmd.(v "ocaml-crunch" % "-o" % p file % p dir)
+      | false -> Action.errorf "The directory %s does not exist." dirname
+    in
+    ([], action)
   in
-  let clean _i =
-    Action.rm Fpath.(v name + "ml") >>= fun () ->
-    Action.rm Fpath.(v name + "mli")
-  in
-  impl ~packages ~connect ~build ~clean name ro
+  impl ~packages ~connect ~build name ro
 
 let direct_kv_ro dirname =
   let packages = [ package ~min:"2.1.0" ~max:"3.0.0" "mirage-kv-unix" ] in

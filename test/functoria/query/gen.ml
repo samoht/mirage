@@ -31,7 +31,6 @@ let () =
       v "name";
       v "opam";
       v "packages";
-      v "install";
       v "files-configure";
       v "files-build";
       v "Makefile";
@@ -40,4 +39,7 @@ let () =
       { file = "help-query"; cmd = "help query --man-format=plain" };
       { file = "query-help"; cmd = "query --help=plain" };
       { file = "version"; cmd = "query --version" };
+      v "dune-base";
+      v "dune-configure";
+      v "dune-build";
     ]

@@ -78,6 +78,8 @@ end
 module type S = sig
   val prelude : string
 
+  val packages : Package.t list
+
   val name : string
 
   val version : string
@@ -149,14 +151,15 @@ module Make (P : S) = struct
     let main = Info.main i in
     let purpose = Fmt.strf "configure: create %a" Fpath.pp main in
     Log.info (fun m -> m "Generating: %a (main file)" Fpath.pp main);
-    Action.with_output ~path:main ~append:false ~purpose (fun ppf ->
-        Fmt.pf ppf "%a@.@.let _ = Printexc.record_backtrace true@.@." Fmt.text
-          P.prelude)
-    >>= fun () ->
-    Engine.configure i jobs >>= fun () -> Engine.connect i ~init jobs
-
-  let clean_main i jobs =
-    Engine.clean i jobs >>= fun () -> Action.rm (Info.main i)
+    let dune, configure = Engine.configure i jobs in
+    let action =
+      Action.with_output ~path:main ~append:false ~purpose (fun ppf ->
+          Fmt.pf ppf "%a@.@.let _ = Printexc.record_backtrace true@.@." Fmt.text
+            P.prelude)
+      >>= fun () ->
+      configure >>= fun () -> Engine.connect i ~init jobs
+    in
+    (dune, action)
 
   let configure args =
     let jobs, i = args.Cli.context in
@@ -166,15 +169,17 @@ module Make (P : S) = struct
       | None -> ()
       | Some o -> Log.info (fun m -> m "Output       : %a" Fmt.(string) o)
     in
-    Action.with_dir (build_dir args) (fun () -> configure_main i jobs)
+    let dune, configure = configure_main i jobs in
+    (dune, Action.with_dir (build_dir args) (fun () -> configure))
 
   let build args =
     let (_, jobs), i = args.Cli.context in
     Log.info (fun m -> m "Building: %a" Fpath.pp args.Cli.config_file);
-    Action.with_dir (build_dir args) (fun () -> Engine.build i jobs)
+    let dune, build = Engine.build i jobs in
+    (dune, Action.with_dir (build_dir args) (fun () -> build))
 
   let query ({ args; kind; depext } : _ Cli.query_args) =
-    let jobs, i = args.Cli.context in
+    let _, i = args.Cli.context in
     match kind with
     | `Name -> Fmt.pr "%s\n%!" (Info.name i)
     | `Packages ->
@@ -183,28 +188,38 @@ module Make (P : S) = struct
     | `Opam ->
         let opam = Info.opam i in
         Fmt.pr "%a\n%!" Opam.pp opam
-    | `Install ->
-        let install = Key.eval (Info.context i) (Engine.install i (snd jobs)) in
-        Fmt.pr "%a\n%!" Install.pp install
     | `Files stage ->
         let actions =
-          match stage with `Configure -> configure args | `Build -> build args
+          match stage with
+          | `Configure -> snd (configure args)
+          | `Build -> snd (build args)
         in
         let files = Fpath.Set.elements (Action.generated_files actions) in
         Fmt.pr "%a\n%!" Fmt.(list ~sep:(unit " ") Fpath.pp) files
     | `Makefile ->
         let file = Makefile.v ~depext (Info.name i) in
         Fmt.pr "%a\n%!" Makefile.pp file
-
-  let clean args =
-    let (_, jobs), i = args.Cli.context in
-    Log.info (fun m -> m "Cleaning: %a" Fpath.pp args.Cli.config_file);
-    Action.with_dir (build_dir args) (fun () ->
-        clean_main i jobs >>= fun () ->
-        Filegen.rm Fpath.(v "dune") >>= fun () ->
-        Filegen.rm Fpath.(v "dune.config") >>= fun () ->
-        Filegen.rm Fpath.(v "dune.build") >>= fun () ->
-        Action.rm Fpath.(v ".merlin"))
+    | `Dune `Base ->
+        let dune =
+          Dune.base ~packages:P.packages ~name:P.name ~version:P.version
+        in
+        Fmt.pr "%a\n%!" Dune.pp dune
+    | `Dune `Configure ->
+        let extra, configure = configure args in
+        let dune =
+          Dune.configure ~packages:P.packages ~name:P.name ~version:P.version
+            ~configure ~extra { args with context = () }
+        in
+        Fmt.pr "%a\n%!" Dune.pp dune
+    | `Dune `Build ->
+        let extra_c, configure = configure args in
+        let extra_b, build = build args in
+        let extra = extra_c @ extra_b in
+        let dune =
+          Dune.build ~packages:P.packages ~name:P.name ~version:P.version
+            ~configure ~build ~extra { args with context = () }
+        in
+        Fmt.pr "%a\n%!" Dune.pp dune
 
   let ok () = Action.ok ()
 
@@ -232,11 +247,11 @@ module Make (P : S) = struct
         | Cli.Configure t ->
             let t = { t with args = with_output t.args } in
             Log.info (fun m -> pp_info m (Some Logs.Debug) t.args);
-            configure t.args
+            snd (configure t.args)
         | Cli.Build t ->
             let t = with_output t in
             Log.info (fun m -> pp_info m (Some Logs.Debug) t);
-            build t
+            snd (build t)
         | Cli.Query t ->
             let t = { t with args = with_output t.args } in
             Log.info (fun m -> pp_info m (Some Logs.Debug) t.args);
@@ -246,10 +261,7 @@ module Make (P : S) = struct
             let t = { t with args = with_output t.args } in
             pp_info Fmt.(pf stdout) (Some Logs.Info) t.args;
             describe t
-        | Cli.Clean t ->
-            let t = with_output t in
-            Log.info (fun m -> pp_info m (Some Logs.Debug) t);
-            clean t )
+        | Cli.Clean _ -> Action.ok () )
 
   let action_run args a =
     if not args.Cli.dry_run then Action.run a

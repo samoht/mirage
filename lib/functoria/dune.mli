@@ -16,14 +16,42 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
 
+(** Dune files. *)
+
+type stanza
+
+val stanza : string -> stanza
+
+val stanzaf : ('a, Format.formatter, unit, stanza) format4 -> 'a
+
 type t
 
-val v : ?bin:(Fpath.t * Fpath.t) list -> ?etc:Fpath.t list -> unit -> t
-
-val union : t -> t -> t
-
-val empty : t
+val v : stanza list -> t
 
 val pp : t Fmt.t
 
-val dump : t Fmt.t
+val to_string : t -> string
+
+val base : packages:Package.t list -> name:string -> version:string -> t
+(** [base] is a minimal [dune] file able to build [config.ml] *)
+
+val configure :
+  packages:Package.t list ->
+  name:string ->
+  version:string ->
+  configure:'a Action.t ->
+  ?extra:stanza list ->
+  unit Cli.args ->
+  t
+(** [configure] is the [dune] able to configure a project. *)
+
+val build :
+  packages:Package.t list ->
+  name:string ->
+  version:string ->
+  configure:'a Action.t ->
+  build:'a Action.t ->
+  ?extra:stanza list ->
+  unit Cli.args ->
+  t
+(** [full] is the [dune] able to build a full project. *)

@@ -34,7 +34,7 @@ let xen_block_packages =
 let xenstore_conf id =
   let configure i =
     match get_target i with
-    | `Qubes | `Xen -> Action.ok ()
+    | `Qubes | `Xen -> ([], Action.ok ())
     | _ ->
         failwith
           "XenStore IDs are only valid ways of specifying block devices when \
@@ -74,7 +74,7 @@ let block_conf file =
   in
   let configure _ =
     let (_ : block_t) = make_block_t file in
-    Action.ok ()
+    ([], Action.ok ())
   in
   let connect i s _ =
     match get_target i with
@@ -109,7 +109,7 @@ let tar_block dir =
   let name = "tar_block" ^ string_of_int (count ()) in
   let block_file = name ^ ".img" in
   let pre_build _ =
-    Action.run_cmd Bos.Cmd.(v "tar" % "-cvf" % block_file % dir)
+    ([], Action.run_cmd Bos.Cmd.(v "tar" % "-cvf" % block_file % dir))
   in
   of_device @@ Device.extend ~pre_build (block_conf block_file)
 

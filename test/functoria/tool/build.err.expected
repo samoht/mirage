@@ -1,11 +1,12 @@
 * Is_file? config.ml -> true
-* Is_file? dune-project -> false
-* Write to dune-project (47 bytes)
-* With_dir ./ [Is_file? dune.config -> false
-               Write to dune.config (143 bytes)
-               Is_file? dune.build -> false
-               Write to dune.build (32 bytes)
-               Is_file? dune -> true
-               Read dune (221 bytes)]
-* Run_cmd 'dune build ./config.exe' (ok: out="[...]" err="")
-* Run_cmd 'dune exec --root . -- ./config.exe build a b c --dry-run' (ok: out="[...]" err="")
+* Is_file? dune -> true
+* Run_cmd 'dune exec --root . -- ./config.exe query name' (ok: out="[...]" err="")
+* Run_cmd 'dune exec --root . -- ./config.exe query opam' (ok: out="[...]" err="")
+* Is_file? [...].opam -> false
+* Write to [...].opam (35 bytes)
+* Is_file? Makefile -> false
+* Write to Makefile (369 bytes)
+* Run_cmd 'dune exec --root . -- ./config.exe query dune-build' (ok: out="[...]" err="")
+* Is_file? dune -> true
+* Read dune (221 bytes)
+* Run_cmd 'dune build @test-build ./' (ok: out="[...]" err="")

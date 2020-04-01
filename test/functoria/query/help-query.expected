@@ -26,7 +26,8 @@ CONFIGURE OPTIONS
 
        INFO (absent=packages)
            The information to query. INFO must be one of `name', `packages',
-           `opam', `install', `files-configure', `files-build' or `Makefile'
+           `opam', `files-configure', `files-build', `Makefile', `dune-base',
+           `dune-configure' or `dune-build'
 
 OPTIONS
        --help[=FMT] (default=auto)

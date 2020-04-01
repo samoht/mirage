@@ -581,6 +581,7 @@ val register :
   ?reporter:reporter impl ->
   ?keys:Key.t list ->
   ?packages:Functoria.package list ->
+  ?src:[ `Auto | `None | `Some of string ] ->
   string ->
   job impl list ->
   unit
@@ -598,6 +599,7 @@ val register :
 module Type = Functoria.Type
 module Impl = Functoria.Impl
 module Info = Functoria.Info
+module Dune = Functoria.Dune
 module Action = Functoria.Action
 
 module FS : sig
@@ -609,8 +611,10 @@ module FS : sig
     unit
 end
 
-module Configure : sig
-  val configure : Info.t -> unit Action.t
+module Project : sig
+  val configure : Info.t -> effect
+
+  val build : Info.t -> effect
 end
 
 module Tool : sig

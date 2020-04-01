@@ -33,6 +33,8 @@ let main t =
   let main = match t.output with None -> "main" | Some f -> f in
   Fpath.v (main ^ ".ml")
 
+let get t k = Key.get t.context k
+
 let opam t = t.opam
 
 let output t = t.output
@@ -177,7 +179,6 @@ let app_info v ?(runtime_package = "functoria-runtime") ?opam_list
   let file = Fpath.(v (String.Ascii.lowercase gen_modname) + "ml") in
   let module_name = gen_modname in
   let connect _ impl_name _ = Fmt.strf "return %s.info" impl_name in
-  let clean _ = Action.rm file in
   let build i =
     Log.info (fun m -> m "Generating: %a (info)" Fpath.pp file);
     let packages =
@@ -185,11 +186,14 @@ let app_info v ?(runtime_package = "functoria-runtime") ?opam_list
       | None -> default_opam_deps (package_names i)
       | Some pkgs -> Action.ok (String.Map.of_list pkgs)
     in
-    packages >>= fun opam ->
-    let ocl = String.Set.of_list (libraries i) in
-    Fmt.kstr (Action.write_file file) "@[<v 2>let info = %a@]"
-      (pp_dump_pkgs modname)
-      (name i, opam, ocl)
+    let action =
+      packages >>= fun opam ->
+      let ocl = String.Set.of_list (libraries i) in
+      Fmt.kstr (Action.write_file file) "@[<v 2>let info = %a@]"
+        (pp_dump_pkgs modname)
+        (name i, opam, ocl)
+    in
+    ([], action)
   in
   let packages = [ Package.v runtime_package ] in
-  v ~packages ~connect ~clean ~build module_name t
+  v ~packages ~connect ~build module_name t

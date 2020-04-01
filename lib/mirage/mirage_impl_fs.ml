@@ -58,19 +58,19 @@ let fat_block ?(dir = ".") ?(regexp = "*") () =
   let pre_build _ =
     let dir = Fpath.of_string dir |> Rresult.R.error_msg_to_invalid_arg in
     Log.info (fun m -> m "Generating block generator script: %s" file);
-    Action.with_output ~mode:0o755 ~path:(Fpath.v file)
-      ~purpose:"fat shell script" (fun fmt ->
-        fat_shell_script fmt ~block_file ~dir ~regexp)
-    >>= fun () ->
-    Log.info (fun m -> m "Executing block generator script: ./%s" file);
-    Action.run_cmd (Bos.Cmd.v ("./" ^ file))
-  in
-  let pre_clean _ =
-    Action.rm (Fpath.v file) >>= fun () -> Action.rm (Fpath.v block_file)
+    let action =
+      Action.with_output ~mode:0o755 ~path:(Fpath.v file)
+        ~purpose:"fat shell script" (fun fmt ->
+          fat_shell_script fmt ~block_file ~dir ~regexp)
+      >>= fun () ->
+      Log.info (fun m -> m "Executing block generator script: ./%s" file);
+      Action.run_cmd (Bos.Cmd.v ("./" ^ file))
+    in
+    ([], action)
   in
   let packages = [ fat_pkg ] in
   let block = Mirage_impl_block.block_conf block_file in
-  of_device @@ Device.extend ~packages ~pre_build ~pre_clean block
+  of_device @@ Device.extend ~packages ~pre_build block
 
 let fat_of_files ?dir ?regexp () = fat @@ fat_block ?dir ?regexp ()
 

@@ -29,7 +29,7 @@ let network_conf (intf : string Key.key) =
   in
   let configure i =
     all_networks := Key.get (Info.context i) intf :: !all_networks;
-    Action.ok ()
+    ([], Action.ok ())
   in
   impl ~keys ~packages_v ~connect ~configure "Netif" network
 

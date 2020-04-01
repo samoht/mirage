@@ -51,6 +51,9 @@ val keys : t -> Key.t list
 val context : t -> Key.context
 (** [parsed t] is a value representing the command-line argument being parsed. *)
 
+val get : t -> 'a Key.key -> 'a
+(** [get i k] is the value associated with [k] in [context i]. *)
+
 val v :
   packages:Package.t list ->
   keys:Key.t list ->
@@ -70,8 +73,7 @@ val t : t Type.t
 val app_info :
   (packages:Package.t list ->
   connect:(t -> string -> string list -> string) ->
-  clean:(t -> unit Action.t) ->
-  build:(t -> unit Action.t) ->
+  build:(t -> Dune.stanza list * unit Action.t) ->
   string ->
   t Type.t ->
   'd) ->

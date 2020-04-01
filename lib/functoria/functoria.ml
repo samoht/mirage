@@ -22,7 +22,6 @@ module Info = Info
 module Type = Type
 module Impl = Impl
 module Device = Device
-module Install = Install
 module Opam = Opam
 module Lib = Lib
 module Tool = Tool
@@ -31,6 +30,7 @@ module Engine = Engine
 module DSL = DSL
 module Cli = Cli
 module Action = Action
+module Dune = Dune
 
 module type DSL = module type of DSL
 
@@ -66,7 +66,5 @@ let sys_argv = Argv.sys_argv
 let argv = Argv.argv
 
 let app_info =
-  let v ~packages ~connect ~clean ~build s t =
-    Impl.v ~packages ~connect ~clean ~build s t
-  in
+  let v ~packages ~connect ~build s t = Impl.v ~packages ~connect ~build s t in
   Info.app_info v
