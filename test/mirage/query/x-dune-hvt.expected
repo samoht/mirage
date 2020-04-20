@@ -12,15 +12,16 @@
   (action
     (run ./config.exe build --context-file mirage.context --dry-run)))
 
+(rule (copy %{lib:mirage-solo5:cflags} .))
+
 (executable
   (name main)
   (modes (native object))
   (libraries ocaml-freestanding lwt mirage-bootvar-solo5 mirage-clock-freestanding mirage-logs mirage-runtime mirage-solo5 mirage-types)
-  (link_flags -cclib $(pkg-config mirage-solo5 --static --libs-only-l))
+  (link_flags -g -w +A-4-41-42-44 -bin-annot -strict-sequence -principal -safe-string)
   (modules (:standard \ config manifest))
   (forbidden_libraries unix)
-  (flags -g -w +A-4-41-42-44 -bin-annot -strict-sequence -principal -safe-string)
-  (variants freestanding))
+  (flags (:include cflags)))
 
 (rule
   (targets manifest.c)
@@ -35,11 +36,14 @@
     (names manifest)))
 
 (rule
+  (copy %{lib:solo5-bindings-hvt:ldflags} .))
+
+(rule
   (target noop.hvt)
   (mode (promote (until-clean)))
   (deps main.exe.o manifest.o)
   (action
-    (run $(pkg-config solo5-bindings-hvt --variable=ld) $(pkg-config solo5-bindings-hvt --variable=ldflags) main.exe.o manifest.o -o %{target} $(pkg-config solo5-bindings-hvt --variable=ldpostflags))))
+    (run %{ld} (:include ldflags) main.exe.o manifest.o -o %{target})))
 
 (install
   (files noop.hvt)

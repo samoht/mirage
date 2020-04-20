@@ -42,7 +42,7 @@ val configure : Info.t -> t -> unit Action.t
     the implementations appearing in [t], in topological order. Use the build
     information [i]. *)
 
-val dune : Info.t -> t -> Dune.stanza list Action.t
+val dune : Info.t -> t -> Dune.stanza list
 (** [dune i t] is the list of dune stanzas needed to build the project [t] with
     the build information [i]. *)
 

@@ -88,7 +88,7 @@ module type S = sig
 
   val dune_project : Dune.t option
 
-  val dune_workspace : (info -> Dune.t Action.t) option
+  val dune_workspace : (info -> Dune.t) option
 end
 
 module Make (P : S) = struct
@@ -202,12 +202,13 @@ module Make (P : S) = struct
         Action.ok ()
     | `Dune `Full ->
         let files = files i jobs in
-        Engine.dune i jobs >|= fun extra ->
+        let extra = Engine.dune i jobs in
         let dune =
           Dune.full ~packages:P.packages ~name:P.name ~version:P.version ~files
             ~extra { args with context = () }
         in
-        Fmt.pr "%a\n%!" Dune.pp dune
+        Fmt.pr "%a\n%!" Dune.pp dune;
+        Action.ok ()
     | `Dune `Project ->
         let dune =
           match P.dune_project with None -> Dune.base_project | Some d -> d
@@ -215,10 +216,13 @@ module Make (P : S) = struct
         Fmt.pr "%a\n%!" Dune.pp dune;
         Action.ok ()
     | `Dune `Workspace ->
-        ( match P.dune_workspace with
-        | None -> Action.ok Dune.base_workspace
-        | Some f -> f i )
-        >|= fun dune -> Fmt.pr "%a\n%!" Dune.pp dune
+        let dune =
+          match P.dune_workspace with
+          | None -> Dune.base_workspace
+          | Some f -> f i
+        in
+        Fmt.pr "%a\n%!" Dune.pp dune;
+        Action.ok ()
 
   let ok () = Action.ok ()
 
@@ -275,7 +279,7 @@ module Make (P : S) = struct
         in
         match Bos.Cmd.to_list cmd with
         | [ "opam"; "config"; "var"; "prefix" ] -> Some ("$prefix", "")
-        | "ocamlfind" :: "query" :: _ | "pkg-config" :: _ -> cmd_str
+        | "ocamlfind" :: "query" :: _ -> cmd_str
         | _ -> None
       in
       let env = Action.env ~files:(`Passtrough (Fpath.v ".")) ~commands () in

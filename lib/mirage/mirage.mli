@@ -612,7 +612,7 @@ module FS : sig
 end
 
 module Project : sig
-  val dune : Info.t -> Dune.stanza list Action.t
+  val dune : Info.t -> Dune.stanza list
 
   val build : Info.t -> unit Action.t
 end

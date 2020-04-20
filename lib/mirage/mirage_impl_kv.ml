@@ -31,7 +31,7 @@ let crunch dirname =
 |}
         Fpath.pp ml Fpath.pp mli Fpath.pp dir Fpath.pp ml Fpath.pp dir
     in
-    Action.ok [ dune ]
+    [ dune ]
   in
   impl ~packages ~connect ~dune name ro
 

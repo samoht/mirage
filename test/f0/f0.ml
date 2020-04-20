@@ -52,7 +52,7 @@ module C = struct
 |}
         Fpath.(basename @@ rem_ext @@ Info.main i)
     in
-    Action.ok [ dune ]
+    [ dune ]
 
   let build i =
     write_key i vote (fun x -> x) >>= fun () ->

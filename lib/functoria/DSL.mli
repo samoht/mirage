@@ -151,7 +151,7 @@ val impl :
   ?keys:Key.t list ->
   ?extra_deps:Impl.abstract list ->
   ?connect:(info -> string -> string list -> string) ->
-  ?dune:(info -> Dune.stanza list Action.t) ->
+  ?dune:(info -> Dune.stanza list) ->
   ?files:(info -> Fpath.t list) ->
   ?build:(info -> unit Action.t) ->
   string ->

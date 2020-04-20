@@ -5,7 +5,7 @@ let main i = Fpath.(base (rem_ext (Info.main i)))
 
 let files _ = []
 
-let workspace _ = Action.ok []
+let workspace _ = []
 
 let build _ = Action.ok ()
 
@@ -34,4 +34,4 @@ let dune i =
 |}
       public_name main package pp_list libraries pp_list flags
   in
-  Action.ok [ dune ]
+  [ dune ]

@@ -17,7 +17,6 @@
  *)
 
 open Functoria
-open Action.Infix
 module Type = Type
 module Impl = Impl
 module Info = Info
@@ -358,7 +357,7 @@ module Project = struct
 (context (default))
         |}
       in
-      stanzas >|= fun stanza -> Dune.v (main :: stanza)
+      Dune.v (main :: stanzas)
     in
 
     Some f

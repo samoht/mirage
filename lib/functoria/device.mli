@@ -72,7 +72,7 @@ val start : string -> string list -> 'a code
 
 (** {2 Files and Rules Generation} *)
 
-val dune : ('a, 'b) t -> Info.t -> Dune.stanza list Action.t
+val dune : ('a, 'b) t -> Info.t -> Dune.stanza list
 (** [dune t info] are the dune stanza which needs to be generated to build the
     application. *)
 
@@ -93,7 +93,7 @@ val v :
   ?keys:Key.t list ->
   ?extra_deps:'b list ->
   ?connect:(Info.t -> string -> string list -> 'a code) ->
-  ?dune:(Info.t -> Dune.stanza list Action.t) ->
+  ?dune:(Info.t -> Dune.stanza list) ->
   ?files:(Info.t -> Fpath.t list) ->
   ?build:(Info.t -> unit Action.t) ->
   string ->
@@ -103,7 +103,7 @@ val v :
 val extend :
   ?packages:Package.t list ->
   ?packages_v:Package.t list Key.value ->
-  ?dune:(Info.t -> Dune.stanza list Action.t) ->
+  ?dune:(Info.t -> Dune.stanza list) ->
   ?files:(Info.t -> Fpath.t list) ->
   ?pre_build:(Info.t -> unit Action.t) ->
   ?post_build:(Info.t -> unit Action.t) ->

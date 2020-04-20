@@ -38,7 +38,7 @@ type ('a, 'impl) t = {
   packages : package list Key.value;
   (* dymamic *)
   connect : info -> string -> string list -> 'a code;
-  dune : info -> Dune.stanza list Action.t;
+  dune : info -> Dune.stanza list;
   files : info -> Fpath.t list;
   build : info -> unit Action.t;
 }
@@ -81,7 +81,7 @@ let count =
 
 let niet _ = Action.ok ()
 
-let none _ = Action.ok []
+let none _ = []
 
 let non _ = []
 
@@ -134,8 +134,5 @@ let extend ?packages ?packages_v ?(dune = none) ?(files = non)
     pre_build i >>= fun () ->
     t.build i >>= fun () -> post_build i
   in
-  let dune i =
-    dune i >>= fun x ->
-    t.dune i >|= fun y -> x @ y
-  in
+  let dune i = dune i @ t.dune i in
   { t with packages; build; dune; files }

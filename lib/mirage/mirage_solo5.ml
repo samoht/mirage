@@ -1,7 +1,6 @@
 open Functoria
 open Action.Infix
 open Astring
-open Mirage_impl_misc
 module Key = Mirage_key
 
 let package = function
@@ -19,38 +18,6 @@ let ext = function
   | `Genode -> ".genode"
   | `Spt -> ".spt"
   | _ -> invalid_arg "solo5 bindings only defined for solo5 targets"
-
-let normalize p = Fpath.(to_string (normalize (v p)))
-
-let static_libs pkg =
-  pkg_config pkg [ "--static"; "--libs-only-l" ] >|= fun libs ->
-  List.flatten @@ List.map (fun o -> [ "-cclib"; normalize o ]) libs
-
-let ldflags pkg =
-  pkg_config pkg [ "--variable=ldflags" ] >|= fun flags ->
-  List.map normalize flags
-
-let ldpostflags pkg =
-  pkg_config pkg [ "--variable=ldpostflags" ] >|= fun flags ->
-  List.map normalize flags
-
-let cflags i =
-  let target = Info.get i Key.target in
-  let pkg = package target in
-  pkg_config "mirage-solo5" [ "--cflags-only-I" ] >>= fun includes ->
-  pkg_config pkg [ "--cflags-only-other" ] >|= fun others ->
-  List.map normalize (includes @ others)
-
-let find_ld pkg =
-  pkg_config pkg [ "--variable=ld" ] >|= function
-  | ld :: _ ->
-      Log.info (fun m ->
-          m "using %s as ld (pkg-config %s --variable=ld)" ld pkg);
-      ld
-  | [] ->
-      Log.warn (fun m ->
-          m "pkg-config %s --variable=ld returned nothing, using ld" pkg);
-      "ld"
 
 let generate_manifest () =
   let networks =
@@ -100,19 +67,19 @@ let link i =
   let main = Fpath.to_string (main i) in
   let pkg = package target in
   let out = out i in
-  ldflags pkg >>= fun ldflags ->
-  ldpostflags pkg >>= fun ldpostflags ->
-  find_ld pkg >|= fun ld ->
   Dune.stanzaf
     {|
+(rule
+  (copy %%{lib:%s:ldflags} .))
+
 (rule
   (target %s)
   (mode (promote (until-clean)))
   (deps main.exe.o manifest.o)
   (action
-    (run %s %a %s.exe.o manifest.o -o %%{target} %a)))
+    (run %%{ld} (:include ldflags) %s.exe.o manifest.o -o %%{target})))
 |}
-    out ld pp_list ldflags main pp_list ldpostflags
+    pkg out main
 
 let manifest () =
   Dune.stanzaf
@@ -145,9 +112,10 @@ let main i =
   let libraries = Info.libraries i in
   let flags = Mirage_dune.flags i in
   let main = Fpath.to_string (main i) in
-  static_libs "mirage-solo5" >|= fun static_libs ->
   Dune.stanzaf
     {|
+(rule (copy %%{lib:mirage-solo5:cflags} .))
+
 (executable
   (name %s)
   (modes (native object))
@@ -155,28 +123,21 @@ let main i =
   (link_flags %a)
   (modules (:standard \ config manifest))
   (forbidden_libraries unix)
-  (flags %a)
-  (variants freestanding))
+  (flags (:include cflags)))
 |}
-    main pp_list libraries pp_list static_libs pp_list flags
+    main pp_list libraries pp_list flags
 
-let dune i =
-  main i >>= fun main ->
-  link i >|= fun link -> [ main; manifest (); link; install i ]
+let dune i = [ main i; manifest (); link i; install i ]
 
-let workspace i =
-  let target = Info.get i Key.target in
-  cflags i >|= fun cflags ->
-  let dune =
+let workspace _ =
+  let dune target =
     Dune.stanzaf
       {|
 (context (default
   (name mirage-%a)
   (host default)
-  (env (_ (c_flags (%a))))))
+  (env (_ (c_flags (:include cflags-%a))))))
 |}
-      Key.pp_target target
-      Fmt.(list ~sep:(unit " ") string)
-      (":standard" :: cflags)
+      Key.pp_target target Key.pp_target target
   in
-  [ dune ]
+  List.map dune [ `Hvt ]

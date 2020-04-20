@@ -48,13 +48,11 @@ let packages =
   | If _ | App -> Packages.empty
 
 module Dune = struct
-  type t = Dune.stanza list Action.t
+  type t = Dune.stanza list
 
-  let union x y =
-    x >>= fun x ->
-    y >|= fun y -> x @ y
+  let union = ( @ )
 
-  let empty = Action.ok []
+  let empty = []
 end
 
 let dune info =
