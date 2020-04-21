@@ -52,7 +52,7 @@ module Make (P : PROJECT) = struct
   let has_headers file contents =
     match Fpath.basename file with
     | "dune-project" | "dune-workspace" -> (
-        let lines = String.cuts ~sep:"\n" ~empty:true contents in
+        let lines = String.cuts ~sep:"\n" ~empty:true (String.trim contents) in
         match List.rev lines with
         | x :: _ -> String.is_infix ~affix:(short_headers `Sexp) x
         | _ -> false )
@@ -78,7 +78,7 @@ module Make (P : PROJECT) = struct
     else
       match Fpath.basename file with
       | "dune-project" | "dune-workspace" ->
-          Fmt.str "%s\n\n%s" contents (headers `Sexp)
+          Fmt.str "%s\n%s\n" contents (headers `Sexp)
       | _ -> (
           match lang file with
           | None -> Fmt.invalid_arg "%a: invalide lang" Fpath.pp file

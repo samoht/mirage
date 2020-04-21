@@ -4,11 +4,11 @@ open Astring
 module Key = Mirage_key
 
 let package = function
-  | `Virtio -> "solo5-bindings-virtio"
-  | `Muen -> "solo5-bindings-muen"
-  | `Hvt -> "solo5-bindings-hvt"
-  | `Genode -> "solo5-bindings-genode"
-  | `Spt -> "solo5-bindings-spt"
+  | `Virtio -> "solo5-virtio"
+  | `Muen -> "solo5-muen"
+  | `Hvt -> "solo5-hvt"
+  | `Genode -> "solo5--genode"
+  | `Spt -> "solo5-spt"
   | _ -> invalid_arg "solo5 bindings only defined for solo5 targets"
 
 let ext = function
@@ -69,65 +69,80 @@ let link i =
   let out = out i in
   Dune.stanzaf
     {|
-(rule
-  (copy %%{lib:%s:ldflags} .))
+(rule (copy %%{lib:%s:ldflags} ldflags))
 
 (rule
   (target %s)
+  (enabled_if (= %%{context_name} "mirage-%a"))
   (mode (promote (until-clean)))
   (deps main.exe.o manifest.o)
   (action
-    (run %%{ld} (:include ldflags) %s.exe.o manifest.o -o %%{target})))
+    (run ld %%{read:ldflags} %s.exe.o manifest.o -o %%{target})))
 |}
-    pkg out main
+    pkg out Key.pp_target target main
 
-let manifest () =
+let manifest i =
+  let target = Info.get i Key.target in
   Dune.stanzaf
     {|
 (rule
   (targets manifest.c)
-  (deps manifest.json)
+  (deps manifest.json (package solo5))
   (action (run solo5-elftool gen-manifest manifest.json manifest.c)))
-
-(library
-  (name manifest)
-  (modules manifest)
-  (foreign_stubs
-    (language c)
-    (names manifest)))
 |}
 
 let install i =
   let out = out i in
+  let target = Info.get i Key.target in
   let package = Info.name i in
-  Dune.stanzaf {|
-(install
-  (files %s)
-  (section bin)
-  (package %s))
-|} out
-    package
+  Dune.stanzaf
+    {|
+;(install
+;  (files %s)
+; need ocaml/dune#3354
+; (enabled_if (= %%{context_name} "mirage-%a"))
+;  (section bin)
+;  (package %s))
+|}
+    out Key.pp_target target package
+
+(* FIXME: should be generated in the root dune only *)
+let workspace_flags i =
+  let target = Info.get i Key.target in
+  Dune.stanzaf
+    {|(rule
+      (target cflags-%a)
+      (deps %%{lib:solo5-%a:cflags} %%{lib:ocaml-freestanding:cflags})
+      (action (with-stdout-to %%{target} (progn
+      (echo "(")
+      (cat %%{lib:ocaml-freestanding:cflags})
+      (cat %%{lib:solo5-%a:cflags})
+      (bash "echo \" -I$(dirname %%{lib:solo5-%a:cflags})\"")
+      (echo ")")))))
+    |}
+    Key.pp_target target Key.pp_target target Key.pp_target target Key.pp_target
+    target
 
 let main i =
   let libraries = Info.libraries i in
   let flags = Mirage_dune.flags i in
+  let target = Info.get i Key.target in
   let main = Fpath.to_string (main i) in
   Dune.stanzaf
     {|
-(rule (copy %%{lib:mirage-solo5:cflags} .))
-
 (executable
+  (enabled_if (= %%{context_name} "mirage-%a"))
   (name %s)
   (modes (native object))
   (libraries ocaml-freestanding %a)
   (link_flags %a)
   (modules (:standard \ config manifest))
-  (forbidden_libraries unix)
-  (flags (:include cflags)))
+  (foreign_stubs  (language c) (names manifest))
+  (forbidden_libraries unix))
 |}
-    main pp_list libraries pp_list flags
+    Key.pp_target target main pp_list libraries pp_list flags
 
-let dune i = [ main i; manifest (); link i; install i ]
+let dune i = [ main i; manifest i; link i; workspace_flags i; install i ]
 
 let workspace _ =
   let dune target =
@@ -136,6 +151,7 @@ let workspace _ =
 (context (default
   (name mirage-%a)
   (host default)
+  (disable_dynamically_linked_foreign_archives true)
   (env (_ (c_flags (:include cflags-%a))))))
 |}
       Key.pp_target target Key.pp_target target
