@@ -69,7 +69,8 @@ let link i =
   let out = out i in
   Dune.stanzaf
     {|
-(rule (copy %%{lib:%s:ldflags} ldflags))
+(rule (copy %%{lib:%s:ldflags} ldflags-solo5))
+(rule (copy %%{lib:ocaml-freestanding:ldflags} ldflags-freestanding))
 
 (rule
   (target %s)
@@ -77,12 +78,13 @@ let link i =
   (mode (promote (until-clean)))
   (deps main.exe.o manifest.o)
   (action
-    (run ld %%{read:ldflags} %s.exe.o manifest.o -o %%{target})))
+    (run
+      ld %%{read:ldflags-solo5} %%{read:ldflags-freestanding}
+         %s.exe.o manifest.o -o %%{target})))
 |}
     pkg out Key.pp_target target main
 
-let manifest i =
-  let target = Info.get i Key.target in
+let manifest _i =
   Dune.stanzaf
     {|
 (rule
@@ -99,8 +101,8 @@ let install i =
     {|
 ;(install
 ;  (files %s)
-; need ocaml/dune#3354
-; (enabled_if (= %%{context_name} "mirage-%a"))
+;  need ocaml/dune#3354
+;  (enabled_if (= %%{context_name} "mirage-%a"))
 ;  (section bin)
 ;  (package %s))
 |}
@@ -110,15 +112,16 @@ let install i =
 let workspace_flags i =
   let target = Info.get i Key.target in
   Dune.stanzaf
-    {|(rule
-      (target cflags-%a)
-      (deps %%{lib:solo5-%a:cflags} %%{lib:ocaml-freestanding:cflags})
-      (action (with-stdout-to %%{target} (progn
-      (echo "(")
-      (cat %%{lib:ocaml-freestanding:cflags})
-      (cat %%{lib:solo5-%a:cflags})
-      (bash "echo \" -I$(dirname %%{lib:solo5-%a:cflags})\"")
-      (echo ")")))))
+    {|
+(rule
+  (target cflags-%a)
+  (deps %%{lib:solo5-%a:cflags} %%{lib:ocaml-freestanding:cflags})
+  (action (with-stdout-to %%{target} (progn
+  (echo "(")
+  (cat %%{lib:ocaml-freestanding:cflags})
+  (cat %%{lib:solo5-%a:cflags})
+  (bash "echo \" -I$(dirname %%{lib:solo5-%a:cflags})\"")
+  (echo ")")))))
     |}
     Key.pp_target target Key.pp_target target Key.pp_target target Key.pp_target
     target
@@ -156,4 +159,4 @@ let workspace _ =
 |}
       Key.pp_target target Key.pp_target target
   in
-  List.map dune [ `Hvt ]
+  Dune.stanza "(profile release)" :: List.map dune [ `Hvt ]
