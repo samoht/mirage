@@ -5,7 +5,6 @@ open Mirage_impl_misc
 let flags i =
   let ctx = Info.context i in
   let warn_error = Key.(get ctx warn_error) in
-
   [
     "-g";
     "-w";

@@ -9,4 +9,4 @@
 "ocaml" {build &  >= "4.06.0"}
 "ocamlbuild" {build}
 "ocamlfind" {build}
-"solo5-bindings-hvt" { >= "0.6.0" & < "0.7.0"}
+"solo5-hvt" { >= "0.6.0" & < "0.7.0"}

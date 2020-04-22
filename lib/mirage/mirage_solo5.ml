@@ -69,17 +69,18 @@ let link i =
   let out = out i in
   Dune.stanzaf
     {|
-(rule (copy %%{lib:%s:ldflags} ldflags-solo5))
-(rule (copy %%{lib:ocaml-freestanding:ldflags} ldflags-freestanding))
+(rule (copy %%{lib:%s:ldflags} solo5-ldflags))
+
+(rule (copy %%{lib:ocaml-freestanding:ldflags} freestanding-ldflags))
 
 (rule
   (target %s)
   (enabled_if (= %%{context_name} "mirage-%a"))
   (mode (promote (until-clean)))
-  (deps main.exe.o manifest.o)
+  (deps main.exe.o manifest.o solo5-ldflags freestanding-ldflags)
   (action
     (run
-      ld %%{read:ldflags-solo5} %%{read:ldflags-freestanding}
+      ld %%{read:solo5-ldflags} %%{read:freestanding-ldflags}
          %s.exe.o manifest.o -o %%{target})))
 |}
     pkg out Key.pp_target target main
@@ -111,20 +112,20 @@ let install i =
 (* FIXME: should be generated in the root dune only *)
 let workspace_flags i =
   let target = Info.get i Key.target in
+  let pkg = package target in
   Dune.stanzaf
     {|
 (rule
   (target cflags-%a)
-  (deps %%{lib:solo5-%a:cflags} %%{lib:ocaml-freestanding:cflags})
-  (action (with-stdout-to %%{target} (progn
-  (echo "(")
-  (cat %%{lib:ocaml-freestanding:cflags})
-  (cat %%{lib:solo5-%a:cflags})
-  (bash "echo \" -I$(dirname %%{lib:solo5-%a:cflags})\"")
-  (echo ")")))))
+  (action
+    (with-stdout-to %%{target} (progn
+      (echo "(")
+      (cat %%{lib:%s:cflags})
+      (echo " ")
+      (cat %%{lib:ocaml-freestanding:cflags})
+      (echo ")")))))
     |}
-    Key.pp_target target Key.pp_target target Key.pp_target target Key.pp_target
-    target
+    Key.pp_target target pkg
 
 let main i =
   let libraries = Info.libraries i in

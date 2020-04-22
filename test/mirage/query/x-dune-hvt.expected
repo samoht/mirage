@@ -12,40 +12,48 @@
   (action
     (run ./config.exe build --context-file mirage.context --dry-run)))
 
-(rule (copy %{lib:mirage-solo5:cflags} .))
-
 (executable
+  (enabled_if (= %{context_name} "mirage-hvt"))
   (name main)
   (modes (native object))
   (libraries ocaml-freestanding lwt mirage-bootvar-solo5 mirage-clock-freestanding mirage-logs mirage-runtime mirage-solo5 mirage-types)
   (link_flags -g -w +A-4-41-42-44 -bin-annot -strict-sequence -principal -safe-string)
   (modules (:standard \ config manifest))
-  (forbidden_libraries unix)
-  (flags (:include cflags)))
+  (foreign_stubs  (language c) (names manifest))
+  (forbidden_libraries unix))
 
 (rule
   (targets manifest.c)
-  (deps manifest.json)
+  (deps manifest.json (package solo5))
   (action (run solo5-elftool gen-manifest manifest.json manifest.c)))
 
-(library
-  (name manifest)
-  (modules manifest)
-  (foreign_stubs
-    (language c)
-    (names manifest)))
+(rule (copy %{lib:solo5-hvt:ldflags} solo5-ldflags))
 
-(rule
-  (copy %{lib:solo5-bindings-hvt:ldflags} .))
+(rule (copy %{lib:ocaml-freestanding:ldflags} freestanding-ldflags))
 
 (rule
   (target noop.hvt)
+  (enabled_if (= %{context_name} "mirage-hvt"))
   (mode (promote (until-clean)))
-  (deps main.exe.o manifest.o)
+  (deps main.exe.o manifest.o solo5-ldflags freestanding-ldflags)
   (action
-    (run %{ld} (:include ldflags) main.exe.o manifest.o -o %{target})))
+    (run
+      ld %{read:solo5-ldflags} %{read:freestanding-ldflags}
+         main.exe.o manifest.o -o %{target})))
 
-(install
-  (files noop.hvt)
-  (section bin)
-  (package noop))
+(rule
+  (target cflags-hvt)
+  (action
+    (with-stdout-to %{target} (progn
+      (echo "(")
+      (cat %{lib:solo5-hvt:cflags})
+      (echo " ")
+      (cat %{lib:ocaml-freestanding:cflags})
+      (echo ")")))))
+
+;(install
+;  (files noop.hvt)
+;  need ocaml/dune#3354
+;  (enabled_if (= %{context_name} "mirage-hvt"))
+;  (section bin)
+;  (package noop))
