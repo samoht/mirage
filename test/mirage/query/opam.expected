@@ -13,13 +13,9 @@ depends: [
   "mirage-bootvar-unix" { >= "0.1.0" & < "0.2.0"}
   "mirage-runtime"
   "mirage-unix" { >= "4.0.0" & < "5.0.0"}
-  "ocaml" {build &  >= "4.06.0"}
   "lwt"
-  "mirage-types" { >= "3.7.0" & < "3.8.0"}
-  "mirage-runtime" { >= "3.7.0" & < "3.8.0"}
-  "mirage" {build &  >= "3.7.0" & < "3.8.0"}
-  "ocamlfind" {build}
-  "ocamlbuild" {build}
+  "mirage-runtime" { >= "4.0.0" & < "4.1.0"}
+  "mirage" {build &  >= "4.0.0" & < "4.1.0"}
   "mirage-logs" { >= "1.2.0" & < "2.0.0"}
 ]
 

@@ -22,5 +22,7 @@ let run ?(keys = []) ?init context device =
       ~src:`None "foo"
   in
   prelude info >>= fun () ->
-  Engine.configure info t >>= fun () ->
-  Engine.connect ?init info t >>= fun () -> Engine.build info t
+  Engine.generate_modules info t >>= fun _ ->
+  Engine.generate_connects ?init info t >>= fun () ->
+  let _, a = Engine.configure info t in
+  a

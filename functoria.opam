@@ -18,6 +18,8 @@ build: [
   ["dune" "runtest" "-p" name "-j" jobs] {with-test}
 ]
 
+pin-depends: ["duniverse.dev" "git+https://github.com/ocamllabs/duniverse.git"]
+
 depends: [
   "ocaml" {>= "4.07.0"}
   "dune" {>= "2.0.0"}
@@ -30,6 +32,7 @@ depends: [
   "logs"
   "bos"
   "fpath"
+  "duniverse" {build}
   "alcotest" {with-test}
 ]
 synopsis: "A DSL to organize functor applications"

@@ -33,6 +33,8 @@ let main t =
   let main = match t.output with None -> "main" | Some f -> f in
   Fpath.v (main ^ ".ml")
 
+let get t k = Key.get t.context k
+
 let opam t = t.opam
 
 let output t = t.output
@@ -50,8 +52,6 @@ let libraries ps =
 let packages t = List.map snd (String.Map.bindings t.packages)
 
 let libraries t = libraries (packages t)
-
-let package_names t = List.map Package.name (packages t)
 
 let pins packages =
   List.fold_left

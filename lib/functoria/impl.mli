@@ -53,10 +53,8 @@ val v :
   ?keys:Key.t list ->
   ?extra_deps:abstract list ->
   ?connect:(Info.t -> string -> string list -> string) ->
-  ?configure:(Info.t -> unit Action.t) ->
-  ?files:(Info.t -> [ `Configure | `Build ] -> Fpath.t list) ->
-  ?build:(Info.t -> unit Action.t) ->
-  ?clean:(Info.t -> unit Action.t) ->
+  ?dune:(Info.t -> Dune.stanza list) ->
+  ?configure:(Info.t -> Fpath.t list * unit Action.t) ->
   string ->
   'a Type.t ->
   'a t

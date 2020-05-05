@@ -147,16 +147,12 @@ val of_device : 'a device -> 'a impl
 
 val impl :
   ?packages:package list ->
-  ?packages_v:package list Key.value ->
-  ?install:(Info.t -> Install.t) ->
-  ?install_v:(Info.t -> Install.t Key.value) ->
+  ?packages_v:package list value ->
   ?keys:Key.t list ->
   ?extra_deps:Impl.abstract list ->
   ?connect:(info -> string -> string list -> string) ->
-  ?configure:(info -> unit Action.t) ->
-  ?files:(info -> [ `Configure | `Build ] -> Fpath.t list) ->
-  ?build:(info -> unit Action.t) ->
-  ?clean:(info -> unit Action.t) ->
+  ?dune:(info -> Dune.stanza list) ->
+  ?configure:(info -> Fpath.t list * unit Action.t) ->
   string ->
   'a typ ->
   'a impl

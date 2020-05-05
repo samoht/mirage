@@ -12,15 +12,11 @@ depends: [
   "mirage-clock-freestanding" { >= "3.0.0" & < "4.0.0"}
   "mirage-bootvar-solo5" { >= "0.6.0" & < "0.7.0"}
   "mirage-runtime"
-  "solo5-bindings-hvt" { >= "0.6.0" & < "0.7.0"}
-  "mirage-solo5" { >= "0.6.1" & < "0.7.0"}
-  "ocaml" {build &  >= "4.06.0"}
+  "solo5-hvt" { >= "1.0.0" & < "1.1.0"}
+  "mirage-solo5" { >= "1.0.0" & < "1.1.0"}
   "lwt"
-  "mirage-types" { >= "3.7.0" & < "3.8.0"}
-  "mirage-runtime" { >= "3.7.0" & < "3.8.0"}
-  "mirage" {build &  >= "3.7.0" & < "3.8.0"}
-  "ocamlfind" {build}
-  "ocamlbuild" {build}
+  "mirage-runtime" { >= "4.0.0" & < "4.1.0"}
+  "mirage" {build &  >= "4.0.0" & < "4.1.0"}
   "mirage-logs" { >= "1.2.0" & < "2.0.0"}
 ]
 

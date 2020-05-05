@@ -16,9 +16,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
 
-type t = { depext : bool; name : string }
+type t = { depext : bool; name : string; duniverse : bool }
 
-let v ~depext name = { depext; name }
+let v ?(duniverse = false) ~depext name = { depext; name; duniverse }
 
 let pp ppf t =
   let pp_depext ppf = function
@@ -33,8 +33,10 @@ let pp ppf t =
      \t    $(OPAM) pin remove --no-action %s\n\n\
      .PHONY: all depend depends clean build\n\n\
      all:: build\n\n\
-     depend depends::%a\n\
-     \t$(OPAM) install -y --deps-only .\n\n\
+     depend depends::dune-get\n\
+     \tduniverse pull\n\n\
+     dune-get:%a\n\
+     \tduniverse init\n\n\
      build::\n\
      \tmirage build\n\n\
      clean::\n\
