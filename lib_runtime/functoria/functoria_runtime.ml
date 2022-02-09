@@ -16,9 +16,9 @@
 
 module Arg = struct
   type 'a kind =
-    | Opt : 'a * 'a Cmdliner.Arg.converter -> 'a kind
+    | Opt : 'a * 'a Cmdliner.Arg.conv -> 'a kind
     | Flag : bool kind
-    | Required : 'a Cmdliner.Arg.converter -> 'a kind
+    | Required : 'a Cmdliner.Arg.conv -> 'a kind
 
   type 'a t = { info : Cmdliner.Arg.info; kind : 'a kind }
 
@@ -57,7 +57,7 @@ module Key = struct
   let term (type a) (t : a t) =
     let set w = t.value <- Some w in
     let doc = Arg.info t.arg in
-    let term arg = Cmdliner.Term.(pure set $ arg) in
+    let term arg = Cmdliner.Term.(const set $ arg) in
     match Arg.kind t.arg with
     | Arg.Flag -> term @@ Cmdliner.Arg.(value & flag doc)
     | Arg.Opt (default, desc) ->
@@ -72,13 +72,13 @@ let with_argv keys s argv =
   let open Cmdliner in
   if !initialized then ()
   else
-    let gather k rest = Term.(pure (fun () () -> ()) $ k $ rest) in
-    let t = List.fold_right gather keys (Term.pure ()) in
-    match Term.(eval ~argv (t, info s)) with
-    | `Ok _ ->
+    let gather k rest = Term.(const (fun () () -> ()) $ k $ rest) in
+    let t = List.fold_right gather keys (Term.const ()) in
+    match Cmd.eval_value ~argv (Cmd.v (Cmd.info s) t) with
+    | Ok (`Ok _) ->
         initialized := true;
         ()
-    | `Error _ -> exit 64
-    | `Help | `Version -> exit 63
+    | Ok (`Help | `Version) -> exit 63
+    | Error _ -> exit 64
 
 type info = { name : string; libraries : (string * string) list }

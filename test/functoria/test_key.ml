@@ -35,11 +35,12 @@ let keys = Key.Set.of_list Key.[ v key_a; v key_b; v key_c ]
 
 let eval f keys argv =
   let argv = Array.of_list ("" :: argv) in
-  match Cmdliner.Term.eval ~argv (f keys, Cmdliner.Term.info "keys") with
-  | `Error _ -> Alcotest.fail "Error"
-  | `Ok x -> x
-  | `Version -> Alcotest.fail "version"
-  | `Help -> Alcotest.fail "help"
+  let info = Cmdliner.Cmd.info "keys" in
+  match Cmdliner.Cmd.eval_value ~argv (Cmdliner.Cmd.v info (f keys)) with
+  | Error _ -> Alcotest.fail "Error"
+  | Ok (`Ok x) -> x
+  | Ok `Version -> Alcotest.fail "version"
+  | Ok `Help -> Alcotest.fail "help"
 
 exception Error
 
