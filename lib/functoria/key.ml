@@ -268,22 +268,43 @@ module Arg = struct
 end
 
 type 'a key = { name : string; arg : 'a Arg.t; key : 'a Context.key }
-type t = Any : 'a key -> t
+type t = Any : 'a key -> t | Run : string -> t
 
-let equal (Any x) (Any y) = String.equal x.name y.name && Arg.equal x.arg y.arg
-let hash (Any x) = Hashtbl.hash (Hashtbl.hash x.name, Arg.hash x.arg)
+let runtime s = Run s
+let equal_any x y = String.equal x.name y.name && Arg.equal x.arg y.arg
+let hash_any x = Hashtbl.hash (Hashtbl.hash x.name, Arg.hash x.arg)
 
-let compare (Any x) (Any y) =
+let compare_any x y =
   match String.compare x.name y.name with
   | 0 -> Arg.compare x.arg y.arg
   | i -> i
+
+let equal x y =
+  match (x, y) with
+  | Any x, Any y -> equal_any x y
+  | Run x, Run y -> String.equal x y
+  | _ -> false
+
+let hash = function Any x -> hash_any x | Run x -> Hashtbl.hash x
+
+let compare x y =
+  match (x, y) with
+  | Any x, Any y -> compare_any x y
+  | Run x, Run y -> String.compare x y
+  | Any _, Run _ -> 1
+  | Run _, Any _ -> -1
 
 (* Set of keys, without runtime name conflicts. This is useful to create a
    valid cmdliner term. *)
 module Names = Stdlib.Set.Make (struct
   type nonrec t = t
 
-  let compare (Any x) (Any y) = String.compare x.name y.name
+  let compare x y =
+    match (x, y) with
+    | Any x, Any y -> String.compare x.name y.name
+    | Run x, Run y -> String.compare x y
+    | Any _, Run _ -> 1
+    | Run _, Any _ -> -1
 end)
 
 (* Set of keys, where keys with the same name but with different
@@ -301,21 +322,26 @@ module Set = struct
   let add k set =
     if mem k set then
       if k != find k set then
-        let (Any k') = k in
-        invalid_arg ("Duplicate key name: " ^ k'.name)
+        match k with
+        | Any k -> Fmt.invalid_arg "Duplicate key name: %s" k.name
+        | Run k -> Fmt.invalid_arg "Duplicate runtime key name: %s" k
       else set
     else add k set
 
   let pp_gen = Fmt.iter ~sep:(Fmt.any ",@ ") iter
-  let pp_elt fmt (Any k) = Fmt.string fmt k.name
+
+  let pp_elt fmt = function
+    | Any k -> Fmt.string fmt k.name
+    | Run k -> Fmt.string fmt k
+
   let pp = pp_gen pp_elt
 end
 
 let v x = Any x
 let abstract = v
 let arg k = k.arg
-let name (Any k) = k.name
-let stage (Any k) = Arg.stage k.arg
+let name = function Any k -> k.name | Run k -> k
+let stage = function Any k -> Arg.stage k.arg | Run _ -> `Run
 let is_runtime k = match stage k with `Run -> true | `Configure -> false
 let is_configure k = match stage k with `Configure -> true | `Run -> false
 
@@ -355,7 +381,10 @@ let value k =
 
 let of_deps deps = { (pure ()) with deps }
 let deps k = k.deps
-let mem p v = Set.for_all (fun (Any x) -> mem_u p x) v.deps
+
+let mem p v =
+  Set.for_all (function Any x -> mem_u p x | Run _ -> false) v.deps
+
 let peek p v = if mem p v then Some (eval p v) else None
 let default v = eval Context.empty v
 
@@ -371,13 +400,15 @@ let pps p =
       Fmt.(styled `Bold string)
       k.name (Arg.pp k.arg) v default ()
   in
-  let f fmt (Any k) =
-    match (k.arg.Arg.kind, get p k) with
-    | Arg.Required _, None -> Fmt.(styled `Bold string) fmt k.name
-    | Arg.Opt _, v -> pp' fmt k v
-    | Arg.Required _, v -> pp' fmt k v
-    | Arg.Flag, v -> pp' fmt k v
-    | Arg.Opt_all _, v -> pp' fmt k v
+  let f fmt = function
+    | Run _ -> ()
+    | Any k -> (
+        match (k.arg.Arg.kind, get p k) with
+        | Arg.Required _, None -> Fmt.(styled `Bold string) fmt k.name
+        | Arg.Opt _, v -> pp' fmt k v
+        | Arg.Required _, v -> pp' fmt k v
+        | Arg.Flag, v -> pp' fmt k v
+        | Arg.Opt_all _, v -> pp' fmt k v)
     (* Warning 4 and GADT don't interact well. *)
   in
   Fmt.vbox @@ fun ppf s -> Set.(pp_gen f ppf @@ s)
@@ -420,14 +451,19 @@ let create name arg =
 let context l =
   let stage = filter_stage `Configure l in
   let names = Names.of_list (Set.elements stage) in
-  let gather (Any k) rest =
-    let f v p = match v with None -> p | Some v -> Context.add k.key v p in
-    let key = Arg.to_cmdliner k.arg in
-    match k.arg.Arg.kind with
-    | Arg.Opt _ -> Cmdliner.Term.(const f $ key $ rest)
-    | Arg.Required _ -> Cmdliner.Term.(const f $ key $ rest)
-    | Arg.Flag -> Cmdliner.Term.(const f $ key $ rest)
-    | Arg.Opt_all _ -> Cmdliner.Term.(const f $ key $ rest)
+  let gather k rest =
+    match k with
+    | Run _ -> rest
+    | Any k -> (
+        let f v p =
+          match v with None -> p | Some v -> Context.add k.key v p
+        in
+        let key = Arg.to_cmdliner k.arg in
+        match k.arg.Arg.kind with
+        | Arg.Opt _ -> Cmdliner.Term.(const f $ key $ rest)
+        | Arg.Required _ -> Cmdliner.Term.(const f $ key $ rest)
+        | Arg.Flag -> Cmdliner.Term.(const f $ key $ rest)
+        | Arg.Opt_all _ -> Cmdliner.Term.(const f $ key $ rest))
   in
   Names.fold gather names (Cmdliner.Term.const Context.empty)
 
@@ -436,7 +472,10 @@ let context l =
 let module_name = "Key_gen"
 let ocaml_name k = Name.ocamlify (name k)
 let serialize_call fmt k = Fmt.pf fmt "(%s.%s ())" module_name (ocaml_name k)
-let serialize ctx ppf (Any k) = Arg.serialize (get ctx k) ppf (arg k)
+
+let serialize ctx ppf = function
+  | Any k -> Arg.serialize (get ctx k) ppf (arg k)
+  | Run _ -> assert false
 
 let serialize_runtime ctx fmt t =
   Format.fprintf fmt

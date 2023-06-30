@@ -179,6 +179,9 @@ val name : t -> string
 val v : 'a key -> t
 (** [v k] is the [k] with its type hidden. *)
 
+val runtime : string -> t
+(** [runtime x] is the runtime key whose value is [x ()] *)
+
 val abstract : 'a key -> t
   [@@ocaml.deprecated "Use Functoria.Key.v."]
 (** Deprecated, use {!v}. *)
