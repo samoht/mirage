@@ -24,6 +24,7 @@ Build an application.
   dune
   dune.build
   dune.config
+  key.ml
   main.exe
   test
   $ ls -a app/test
@@ -36,7 +37,7 @@ Build an application.
   noop.opam
   vote
   warn_error
-  $ ./app/main.exe
+  $ ./app/main.exe --required=foo
   Success: hello=Hello World! arg=-
   $ ./test.exe clean --file app/config.ml
   $ ls -a app/
@@ -44,6 +45,7 @@ Build an application.
   ..
   app.ml
   config.ml
+  key.ml
 
 Test `--output`:
 
@@ -72,6 +74,7 @@ Test `--output`:
   dune
   dune.build
   dune.config
+  key.ml
   test
   toto.exe
   $ ls -a app/test
@@ -84,7 +87,7 @@ Test `--output`:
   toto.ml
   vote
   warn_error
-  $ ./app/toto.exe
+  $ ./app/toto.exe --required=foo
   Success: hello=Hello World! arg=-
   $ ./test.exe clean --file app/config.ml
   $ ls -a app/
@@ -92,3 +95,4 @@ Test `--output`:
   ..
   app.ml
   config.ml
+  key.ml

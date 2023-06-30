@@ -40,6 +40,7 @@ is passed:
   dune
   dune.build
   dune.config
+  key.ml
   test
   $ ls -a app/test
   .

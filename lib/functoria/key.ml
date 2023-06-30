@@ -393,7 +393,8 @@ let default v = eval Context.empty v
 let pp = Set.pp_elt
 let pp_deps fmt v = Set.pp fmt v.deps
 
-let pps p =
+let pps p ppf l =
+  let l = filter_stage `Configure l in
   let pp' fmt k v =
     let default = if mem_u p k then Fmt.nop else Fmt.any " (default)" in
     Fmt.pf fmt "%a=%a%a"
@@ -411,7 +412,8 @@ let pps p =
         | Arg.Opt_all _, v -> pp' fmt k v)
     (* Warning 4 and GADT don't interact well. *)
   in
-  Fmt.vbox @@ fun ppf s -> Set.(pp_gen f ppf @@ s)
+  let pp = Fmt.vbox @@ fun ppf s -> Set.(pp_gen f ppf @@ s) in
+  pp ppf l
 
 (* {2 Automatic documentation} *)
 
@@ -470,18 +472,24 @@ let context l =
 (* {2 Code emission} *)
 
 let module_name = "Key_gen"
-let ocaml_name k = Name.ocamlify (name k)
-let serialize_call fmt k = Fmt.pf fmt "(%s.%s ())" module_name (ocaml_name k)
+let ocaml_name k = String.lowercase_ascii (Name.ocamlify k)
 
-let serialize ctx ppf = function
-  | Any k -> Arg.serialize (get ctx k) ppf (arg k)
-  | Run _ -> assert false
+let serialize_call fmt = function
+  | Any k -> Fmt.pf fmt "(%s.%s ())" module_name (ocaml_name k.name)
+  | Run k -> Fmt.pf fmt "(%s.%s ())" module_name (ocaml_name k)
 
-let serialize_runtime ctx fmt t =
-  Format.fprintf fmt
-    "@[<2>let %s_t =@ @[<2>%a@]@]@,\
-     @,\
-     @[<2>let %s =@ @[Functoria_runtime.key@ %s_t@]@]@,"
-    (ocaml_name t) (serialize ctx) t (ocaml_name t) (ocaml_name t)
+let serialize ctx ppf k = Arg.serialize (get ctx k) ppf (arg k)
+
+let serialize_runtime ctx fmt = function
+  | Run k ->
+      Format.fprintf fmt "@[<2>let %s =@ @[Functoria_runtime.key@ %s@]@]@,"
+        (ocaml_name k) k
+  | Any k ->
+      Format.fprintf fmt
+        "@[<2>let %s_t =@ @[<2>%a@]@]@,\
+         @,\
+         @[<2>let %s =@ @[Functoria_runtime.key@ %s_t@]@]@,"
+        (ocaml_name k.name) (serialize ctx) k (ocaml_name k.name)
+        (ocaml_name k.name)
 
 let serialize ctx fmt k = if is_runtime k then serialize_runtime ctx fmt k

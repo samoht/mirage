@@ -10,6 +10,7 @@ Make sure that clean remove everything:
   dune
   dune.build
   dune.config
+  key.ml
   test
   $ ls -a app/test
   .
@@ -43,6 +44,7 @@ Make sure that clean remove everything:
   ..
   app.ml
   config.ml
+  key.ml
 
 Check that clean works with `--output`:
 
@@ -56,6 +58,7 @@ Check that clean works with `--output`:
   dune
   dune.build
   dune.config
+  key.ml
   test
   $ ls -a app/test
   .
@@ -90,3 +93,4 @@ Check that clean works with `--output`:
   ..
   app.ml
   config.ml
+  key.ml
