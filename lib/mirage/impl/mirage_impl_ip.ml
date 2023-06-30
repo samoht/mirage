@@ -30,9 +30,8 @@ type ipv4_config = {
 
 let opt_opt_key s = Fmt.(option @@ (any ("?" ^^ s ^^ ":") ++ pp_key))
 let opt_key s = Fmt.(option @@ (any ("~" ^^ s ^^ ":") ++ pp_key))
-let opt_map f = function Some x -> Some (f x) | None -> None
 let ( @? ) x l = match x with Some s -> s :: l | None -> l
-let ( @?? ) x y = opt_map Key.v x @? y
+let ( @?? ) x y = x @? y
 
 (* convenience function for linking tcpip.unix for checksums *)
 let right_tcpip_library ?libs ~sublibs pkg =
@@ -41,7 +40,7 @@ let right_tcpip_library ?libs ~sublibs pkg =
 
 let ipv4_keyed_conf ~ip ?gateway ?no_init () =
   let packages_v = right_tcpip_library ~sublibs:[ "ipv4" ] "tcpip" in
-  let keys = no_init @?? gateway @?? [ Key.v ip ] in
+  let keys = no_init @?? gateway @?? [ ip ] in
   let connect _ modname = function
     | [ _random; _mclock; etif; arp ] ->
         Fmt.str "%s.connect@[@ %a@ %a@ %a@ %s@ %s@]" modname (opt_key "no_init")

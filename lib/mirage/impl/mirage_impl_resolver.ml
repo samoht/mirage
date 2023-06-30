@@ -30,7 +30,7 @@ let resolver_unix_system =
 
 let resolver_dns_conf ~ns =
   let packages = [ Mirage_impl_conduit.pkg ] in
-  let keys = Key.[ v ns ] in
+  let keys = [ ns ] in
   let connect _ modname = function
     | [ _r; _t; _m; _p; stack ] ->
         Fmt.str

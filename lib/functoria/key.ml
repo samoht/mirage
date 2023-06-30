@@ -140,8 +140,6 @@ module Arg = struct
     | Required : 'a converter -> 'a option kind
     | Flag : bool kind
 
-  type stage = [ `Configure | `Run ]
-
   let pp_conv c = snd (converter c)
 
   let pp_kind : type a. a kind -> a Fmt.t = function
@@ -171,36 +169,19 @@ module Arg = struct
     | Opt_all _, _ -> 1
     | _, Opt_all _ -> -1
 
-  type 'a t = { stage : stage; info : info; kind : 'a kind }
+  type 'a t = { info : info; kind : 'a kind }
 
   let pp t = pp_kind t.kind
-
-  let equal x y =
-    x.stage = y.stage && x.info = y.info && compare_kind x.kind y.kind = 0
+  let equal x y = x.info = y.info && compare_kind x.kind y.kind = 0
 
   let compare x y =
-    match compare x.stage y.stage with
-    | 0 -> (
-        match compare x.info y.info with
-        | 0 -> compare_kind x.kind y.kind
-        | i -> i)
-    | i -> i
+    match compare x.info y.info with 0 -> compare_kind x.kind y.kind | i -> i
 
-  let hash x =
-    Hashtbl.hash (Hashtbl.hash x.stage, Hashtbl.hash x.info, hash_of_kind x.kind)
-
-  let stage t = t.stage
-
-  let opt ?(stage = `Configure) conv default info =
-    { stage; info; kind = Opt (default, conv) }
-
-  let flag ?(stage = `Configure) info = { stage; info; kind = Flag }
-
-  let required ?(stage = `Configure) conv info =
-    { stage; info; kind = Required conv }
-
-  let opt_all ?(stage = `Configure) conv info =
-    { stage; info; kind = Opt_all conv }
+  let hash x = Hashtbl.hash (Hashtbl.hash x.info, hash_of_kind x.kind)
+  let opt conv default info = { info; kind = Opt (default, conv) }
+  let flag info = { info; kind = Flag }
+  let required conv info = { info; kind = Required conv }
+  let opt_all conv info = { info; kind = Opt_all conv }
 
   let default (type a) (t : a t) =
     match t.kind with
@@ -269,6 +250,7 @@ end
 
 type 'a key = { name : string; arg : 'a Arg.t; key : 'a Context.key }
 type t = Any : 'a key -> t | Run : string -> t
+type 'a runtime_key = t
 
 let runtime s = Run s
 let equal_any x y = String.equal x.name y.name && Arg.equal x.arg y.arg
@@ -341,7 +323,7 @@ let v x = Any x
 let abstract = v
 let arg k = k.arg
 let name = function Any k -> k.name | Run k -> k
-let stage = function Any k -> Arg.stage k.arg | Run _ -> `Run
+let stage = function Any _ -> `Configure | Run _ -> `Run
 let is_runtime k = match stage k with `Run -> true | `Configure -> false
 let is_configure k = match stage k with `Configure -> true | `Run -> false
 

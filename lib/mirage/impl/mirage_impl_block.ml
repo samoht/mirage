@@ -188,10 +188,9 @@ let docteur_unix (mode : mode) extra_deps disk branch analyze remote =
       {ocaml|let ( <.> ) f g = fun x -> f (g x) in
              let f = Rresult.R.(failwith_error_msg <.> reword_error (msgf "%%a" %s.pp_error)) in
              Lwt.map f (%s.connect ~analyze:%a %a)|ocaml}
-      modname modname Key.serialize_call (Key.v analyze) Key.serialize_call
-      (Key.v disk)
+      modname modname Key.serialize_call analyze Key.serialize_call (Key.v disk)
   in
-  let keys = [ Key.v disk; Key.v analyze ] in
+  let keys = [ Key.v disk; analyze ] in
   let packages = [ package "docteur-unix" ~min:"0.0.6" ] in
   impl ~keys ~packages ~dune ~install ~configure ~connect
     (Fmt.str "Docteur_unix.%a" pp_mode mode)
@@ -243,10 +242,9 @@ let docteur_solo5 (mode : mode) extra_deps disk branch analyze remote =
       {ocaml|let ( <.> ) f g = fun x -> f (g x) in
              let f = Rresult.R.(failwith_error_msg <.> reword_error (msgf "%%a" %s.pp_error)) in
              Lwt.map f (%s.connect ~analyze:%a %a)|ocaml}
-      modname modname Key.serialize_call (Key.v analyze) Key.serialize_call
-      (Key.v disk)
+      modname modname Key.serialize_call analyze Key.serialize_call (Key.v disk)
   in
-  let keys = [ Key.v disk; Key.v analyze ] in
+  let keys = [ Key.v disk; analyze ] in
   let packages = [ package "docteur-solo5" ~min:"0.0.6" ] in
   impl ~keys ~packages ~dune ~install ~configure ~connect
     (Fmt.str "Docteur_solo5.%a" pp_mode mode)
@@ -260,14 +258,9 @@ let disk =
          only alpanumeric characters)."
       [ "disk" ]
   in
-  Key.(create "disk" Arg.(opt ~stage:`Run string "disk" doc))
+  Key.(create "disk" Arg.(opt string "disk" doc))
 
-let analyze =
-  let doc =
-    Key.Arg.info ~doc:"Analyze at the boot time the given docteur disk."
-      [ "analyze" ]
-  in
-  Key.(create "analyze" Arg.(opt ~stage:`Run bool true doc))
+let analyze = Key.runtime "Mirage_runtime.analyze"
 
 let docteur ?(mode = `Fast) ?(disk = disk) ?(analyze = analyze) ?branch
     ?(extra_deps = []) remote =

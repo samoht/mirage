@@ -27,9 +27,7 @@ let direct_tcp ?(mclock = default_monotonic_clock) ?(time = default_time)
   tcp_direct_func () $ ip $ time $ mclock $ random
 
 let tcpv4v6_socket_conf ~ipv4_only ~ipv6_only ipv4_key ipv6_key =
-  let keys =
-    [ Key.v ipv4_only; Key.v ipv6_only; Key.v ipv4_key; Key.v ipv6_key ]
-  in
+  let keys = [ ipv4_only; ipv6_only; ipv4_key; ipv6_key ] in
   let packages_v = right_tcpip_library ~sublibs:[ "tcpv4v6-socket" ] "tcpip" in
   let configure i =
     match get_target i with

@@ -395,7 +395,7 @@ include Lib.Make (Project)
 module Tool = Tool.Make (Project)
 
 let backtrace =
-  let keys = [ Key.v Key.backtrace ] in
+  let keys = [ Key.backtrace ] in
   let connect _ _ _ =
     Fmt.str "return (Printexc.record_backtrace %a)" Mirage_impl_misc.pp_key
       Key.backtrace
@@ -403,7 +403,7 @@ let backtrace =
   impl ~keys ~connect "Printexc" job
 
 let randomize_hashtables =
-  let keys = [ Key.v Key.randomize_hashtables ] in
+  let keys = [ Key.randomize_hashtables ] in
   let connect _ _ _ =
     Fmt.str "return (if %a then Hashtbl.randomize ())" Mirage_impl_misc.pp_key
       Key.randomize_hashtables
@@ -431,16 +431,16 @@ let gc_control =
   let keys =
     Key.
       [
-        v allocation_policy;
-        v minor_heap_size;
-        v major_heap_increment;
-        v space_overhead;
-        v max_space_overhead;
-        v gc_verbosity;
-        v gc_window_size;
-        v custom_major_ratio;
-        v custom_minor_ratio;
-        v custom_minor_max_size;
+        allocation_policy;
+        minor_heap_size;
+        major_heap_increment;
+        space_overhead;
+        max_space_overhead;
+        gc_verbosity;
+        gc_window_size;
+        custom_major_ratio;
+        custom_minor_ratio;
+        custom_minor_max_size;
       ]
   in
   let connect _ _ _ =

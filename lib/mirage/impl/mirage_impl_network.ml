@@ -6,9 +6,12 @@ type network = NETWORK
 let network = Type.v NETWORK
 let all_networks = ref []
 
-let network_conf (intf : string Key.key) =
-  let key = Key.v intf in
-  let keys = [ key ] in
+let add_new_network () =
+  let device = Fmt.str "net%d" (List.length !all_networks) in
+  all_networks := device :: !all_networks
+
+let network_conf (intf : string Key.runtime_key) =
+  let keys = [ (intf :> Key.t) ] in
   let packages_v =
     Key.match_ Key.(value target) @@ function
     | `Unix -> [ package ~min:"3.0.0" ~max:"4.0.0" "mirage-net-unix" ]
@@ -23,11 +26,10 @@ let network_conf (intf : string Key.key) =
         [ package ~min:"0.8.0" ~max:"0.9.0" "mirage-net-solo5" ]
   in
   let connect _ modname _ =
-    (* @samoht: why not just use the args paramater? *)
-    Fmt.str "%s.connect %a" modname Key.serialize_call key
+    Fmt.str "%s.connect %a" modname Key.serialize_call intf
   in
-  let configure i =
-    all_networks := Key.get (Info.context i) intf :: !all_networks;
+  let configure _ =
+    add_new_network ();
     Action.ok ()
   in
   impl ~keys ~packages_v ~connect ~configure "Netif" network

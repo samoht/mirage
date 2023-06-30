@@ -281,7 +281,7 @@ val generic_kv_ro :
 val docteur :
   ?mode:[ `Fast | `Light ] ->
   ?disk:string Key.key ->
-  ?analyze:bool Key.key ->
+  ?analyze:bool Key.runtime_key ->
   ?branch:string ->
   ?extra_deps:string list ->
   string ->
@@ -500,7 +500,7 @@ type ipv6_config = {
 val create_ipv4 :
   ?group:string ->
   ?config:ipv4_config ->
-  ?no_init:bool Key.key ->
+  ?no_init:bool Key.runtime_key ->
   ?random:random impl ->
   ?clock:mclock impl ->
   ethernet impl ->
@@ -526,7 +526,7 @@ val create_ipv6 :
   ?clock:mclock impl ->
   ?group:string ->
   ?config:ipv6_config ->
-  ?no_init:bool Key.key ->
+  ?no_init:bool Key.runtime_key ->
   network impl ->
   ethernet impl ->
   ipv6 impl
@@ -581,8 +581,8 @@ val direct_stackv4v6 :
   ?mclock:mclock impl ->
   ?random:random impl ->
   ?time:time impl ->
-  ipv4_only:bool Key.key ->
-  ipv6_only:bool Key.key ->
+  ipv4_only:bool Key.runtime_key ->
+  ipv6_only:bool Key.runtime_key ->
   network impl ->
   ethernet impl ->
   arpv4 impl ->

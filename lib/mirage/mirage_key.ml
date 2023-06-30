@@ -121,7 +121,7 @@ let target =
     Arg.info ~docs:mirage_section ~docv:"TARGET" ~doc [ "t"; "target" ]
       ~env:"MODE"
   in
-  let key = Arg.opt ~stage:`Configure conv default_target doc in
+  let key = Arg.opt conv default_target doc in
   Key.create "target" key
 
 let is_unix =
@@ -141,156 +141,24 @@ let is_xen =
 
 (** {2 OCaml runtime} *)
 
-(* FIXME: these could move to Mirage_runtime *)
-
-let ocaml_section = "OCAML RUNTIME PARAMETERS"
-
-let backtrace =
-  let doc =
-    "Trigger the printing of a stack backtrace when an uncaught exception \
-     aborts the unikernel."
-  in
-  let doc = Arg.info ~docs:ocaml_section ~docv:"BOOL" ~doc [ "backtrace" ] in
-  let key = Arg.opt ~stage:`Run Arg.bool true doc in
-  Key.create "backtrace" key
-
-let randomize_hashtables =
-  let doc = "Turn on randomization of all hash tables by default." in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"BOOL" ~doc [ "randomize-hashtables" ]
-  in
-  let key = Arg.opt ~stage:`Run Arg.bool true doc in
-  Key.create "randomize-hashtables" key
-
-let allocation_policy =
-  let doc =
-    "The policy used for allocating in the OCaml heap. Possible values are: \
-     $(i,next-fit), $(i,first-fit), $(i,best-fit). Best-fit is only supported \
-     since OCaml 4.10."
-  in
-  let serialize ppf = function
-    | `Next_fit -> Fmt.pf ppf "`Next_fit"
-    | `First_fit -> Fmt.pf ppf "`First_fit"
-    | `Best_fit -> Fmt.pf ppf "`Best_fit"
-  and conv = Mirage_runtime.Arg.allocation_policy in
-  let conv =
-    Arg.conv ~conv ~runtime_conv:"Mirage_runtime.Arg.allocation_policy"
-      ~serialize
-  in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"ALLOCATION" ~doc [ "allocation-policy" ]
-  in
-  let key = Arg.opt ~stage:`Run conv `Next_fit doc in
-  Key.create "allocation-policy" key
-
-let minor_heap_size =
-  let doc = "The size of the minor heap (in words). Default: 256k." in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"MINOR SIZE" ~doc [ "minor-heap-size" ]
-  in
-  let key = Arg.(opt ~stage:`Run (some int) None doc) in
-  Key.create "minor-heap-size" key
-
-let major_heap_increment =
-  let doc =
-    "The size increment for the major heap (in words). If less than or equal \
-     1000, it is a percentage of the current heap size. If more than 1000, it \
-     is a fixed number of words. Default: 15."
-  in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"MAJOR INCREMENT" ~doc
-      [ "major-heap-increment" ]
-  in
-  let key = Arg.(opt ~stage:`Run (some int) None doc) in
-  Key.create "major-heap-increment" key
-
-let space_overhead =
-  let doc =
-    "The percentage of live data of wasted memory, due to GC does not \
-     immediately collect unreachable blocks. The major GC speed is computed \
-     from this parameter, it will work more if smaller. Default: 80."
-  in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"SPACE OVERHEAD" ~doc
-      [ "space-overhead" ]
-  in
-  let key = Arg.(opt ~stage:`Run (some int) None doc) in
-  Key.create "space-overhead" key
-
-let max_space_overhead =
-  let doc =
-    "Heap compaction is triggered when the estimated amount of wasted memory \
-     exceeds this (percentage of live data). If above 1000000, compaction is \
-     never triggered. Default: 500."
-  in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"MAX SPACE OVERHEAD" ~doc
-      [ "max-space-overhead" ]
-  in
-  let key = Arg.(opt ~stage:`Run (some int) None doc) in
-  Key.create "max-space-overhead" key
-
-let gc_verbosity =
-  let doc =
-    "GC messages on standard error output. Sum of flags. Check GC module \
-     documentation for details."
-  in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"VERBOSITY" ~doc [ "gc-verbosity" ]
-  in
-  let key = Arg.(opt ~stage:`Run (some int) None doc) in
-  Key.create "gc-verbosity" key
-
-let gc_window_size =
-  let doc =
-    "The size of the window used by the major GC for smoothing out variations \
-     in its workload. Between 1 adn 50, default: 1."
-  in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"WINDOW SIZE" ~doc [ "gc-window-size" ]
-  in
-  let key = Arg.(opt ~stage:`Run (some int) None doc) in
-  Key.create "gc-window-size" key
-
-let custom_major_ratio =
-  let doc =
-    "Target ratio of floating garbage to major heap size for out-of-heap \
-     memory held by custom values. Default: 44."
-  in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"CUSTOM MAJOR RATIO" ~doc
-      [ "custom-major-ratio" ]
-  in
-  let key = Arg.(opt ~stage:`Run (some int) None doc) in
-  Key.create "custom-major-ratio" key
-
-let custom_minor_ratio =
-  let doc =
-    "Bound on floating garbage for out-of-heap memory held by custom values in \
-     the minor heap. Default: 100."
-  in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"CUSTOM MINOR RATIO" ~doc
-      [ "custom-minor-ratio" ]
-  in
-  let key = Arg.(opt ~stage:`Run (some int) None doc) in
-  Key.create "custom-minor-ratio" key
+let backtrace = Key.runtime "Mirage_runtime.GC.backtrace"
+let randomize_hashtables = Key.runtime "Mirage_runtime.GC.randomize_hashtables"
+let allocation_policy = Key.runtime "Mirage_runtime.GC.allocation_policy"
+let minor_heap_size = Key.runtime "Mirage_runtime.GC.minor_heap_size"
+let major_heap_increment = Key.runtime "Mirage_runtime.GC.major_heap_increment"
+let space_overhead = Key.runtime "Mirage_runtime.GC.space_overhead"
+let max_space_overhead = Key.runtime "Mirage_runtime.GC.max_space_overhead"
+let gc_verbosity = Key.runtime "Mirage_runtime.GC.gc_verbosity"
+let gc_window_size = Key.runtime "Mirage_runtime.GC.gc_window_size"
+let custom_major_ratio = Key.runtime "Mirage_runtime.GC.custom_major_ratio"
+let custom_minor_ratio = Key.runtime "Mirage_runtime.GC.custom_minor_ratio"
 
 let custom_minor_max_size =
-  let doc =
-    "Maximum amount of out-of-heap memory for each custom value allocated in \
-     the minor heap. Default: 8192 bytes."
-  in
-  let doc =
-    Arg.info ~docs:ocaml_section ~docv:"CUSTOM MINOR MAX SIZE" ~doc
-      [ "custom-minor-max-size" ]
-  in
-  let key = Arg.(opt ~stage:`Run (some int) None doc) in
-  Key.create "custom-minor-max-size" key
+  Key.runtime "Mirage_runtime.GC.custom_minor_max_size"
 
 (** {2 General mirage keys} *)
 
-let create_key stage ?(group = "") ~doc ~default conv name =
+let configure_key ?(group = "") ~doc ~default conv name =
   let prefix = if group = "" then group else group ^ "-" in
   let doc =
     Arg.info ~docs:unikernel_section
@@ -298,14 +166,8 @@ let create_key stage ?(group = "") ~doc ~default conv name =
       ~doc
       [ prefix ^ name ]
   in
-  let key = Arg.opt ~stage conv default doc in
+  let key = Arg.opt conv default doc in
   Key.create (prefix ^ name) key
-
-let runtime_key ?group ~doc ~default conv name =
-  create_key `Run ?group ~doc ~default conv name
-
-let configure_key ?group ~doc ~default conv name =
-  create_key `Configure ?group ~doc ~default conv name
 
 (** {3 File system keys} *)
 
@@ -361,102 +223,74 @@ let net ?group () : [ `Socket | `Direct ] option Key.key =
   in
   configure_key ~doc ?group ~default:None (Arg.some conv) "net"
 
+let runtime_key fmt = Fmt.kstr Key.runtime ("Mirage_runtime." ^^ fmt)
+let pp_group ppf = function None -> () | Some g -> Fmt.pf ppf "~group:%S " g
+
+let pp_option pp ppf = function
+  | None -> Fmt.pf ppf "None"
+  | Some d -> Fmt.pf ppf "(Some %a)" pp d
+
+let escape pp ppf = Fmt.kstr (fun str -> Fmt.Dump.string ppf str) "%a" pp
+
 (** {3 Network keys} *)
 
+let runtime_network_key fmt =
+  Fmt.kstr Key.runtime ("(Mirage_runtime_network." ^^ fmt ^^ ")")
+
 let interface ?group default =
-  let doc = Fmt.str "The network interface listened by %a." pp_group group in
-  runtime_key ~doc ~default ?group Arg.string "interface"
+  runtime_network_key "interface %a%S" pp_group group default
 
 module V4 = struct
+  open Ipaddr.V4
+
+  let pp_prefix ppf p =
+    Fmt.pf ppf "(Ipaddr.V4.Prefix.of_string_exn %a)" (escape Prefix.pp) p
+
+  let pp ppf p = Fmt.pf ppf "(Ipaddr.V4.of_string_exn %a)" (escape pp) p
+
   let network ?group default =
-    let doc =
-      Fmt.str
-        "The network of %a specified as an IP address and netmask, e.g. \
-         192.168.0.1/16 ."
-        pp_group group
-    in
-    runtime_key ~doc ~default ?group Arg.ipv4 "ipv4"
+    runtime_network_key "V4.network %a%a" pp_group group pp_prefix default
 
   let gateway ?group default =
-    let doc = Fmt.str "The gateway of %a." pp_group group in
-    runtime_key ~doc ~default ?group Arg.(some ipv4_address) "ipv4-gateway"
+    runtime_network_key "V4.gateway %a%a" pp_group group (pp_option pp) default
 end
 
 module V6 = struct
+  open Ipaddr.V6
+
+  let pp_prefix ppf p =
+    Fmt.pf ppf "(Ipaddr.V6.Prefix.of_string_exn %a)" (escape Prefix.pp) p
+
+  let pp ppf p = Fmt.pf ppf "(Ipaddr.V6.of_string_exn %a)" (escape pp) p
+
   let network ?group default =
-    let doc =
-      Fmt.str "The network of %a specified as IPv6 address and prefix length."
-        pp_group group
-    in
-    runtime_key ~doc ~default ?group Arg.(some ipv6) "ipv6"
+    runtime_network_key "V6.network %a%a" pp_group group (pp_option pp_prefix)
+      default
 
   let gateway ?group default =
-    let doc = Fmt.str "The gateway of %a." pp_group group in
-    runtime_key ~doc ~default ?group Arg.(some ipv6_address) "ipv6-gateway"
+    runtime_network_key "V6.gateway %a%a" pp_group group (pp_option pp) default
 
   let accept_router_advertisements ?group () =
-    let doc = Fmt.str "Accept router advertisements for %a." pp_group group in
-    runtime_key ~doc ?group ~default:true Arg.bool
-      "accept-router-advertisements"
+    runtime_network_key "V6.accept_router_advertisements %a()" pp_group group
 end
 
-let ipv4_only ?group () =
-  let doc = Fmt.str "Only use IPv4 for %a." pp_group group in
-  runtime_key ~doc ?group ~default:false Arg.bool "ipv4-only"
+let ipv4_only ?group () = runtime_network_key "ipv4_only %a()" pp_group group
+let ipv6_only ?group () = runtime_network_key "ipv6_only %a()" pp_group group
 
-let ipv6_only ?group () =
-  let doc = Fmt.str "Only use IPv6 for %a." pp_group group in
-  runtime_key ~doc ?group ~default:false Arg.bool "ipv6-only"
+let resolver ?(default = []) () =
+  let pp_default ppf = function
+    | [] -> ()
+    | l -> Fmt.pf ppf "~default:%a " Fmt.Dump.(list string) l
+  in
+  runtime_network_key "resolver %a()" pp_default default
 
-let resolver ?default () =
-  let doc = Fmt.str "DNS resolver (default to anycast.censurfridns.dk)" in
-  runtime_key ~doc ~default Arg.(some (list string)) "resolver"
-
-let syslog default =
-  let doc = Fmt.str "syslog server" in
-  runtime_key ~doc ~default Arg.(some ip_address) "syslog"
+let pp_ipaddr ppf p = Fmt.pf ppf "Ipaddr.of_string %a" (escape Ipaddr.pp) p
+let syslog default = runtime_key "syslog %a" (pp_option pp_ipaddr) default
 
 let syslog_port default =
-  let doc = Fmt.str "syslog server port" in
-  runtime_key ~doc ~default Arg.(some int) "syslog-port"
+  runtime_key "syslog_port %a" (pp_option Fmt.int) default
 
-let syslog_hostname default =
-  let doc = Fmt.str "hostname to report to syslog" in
-  runtime_key ~doc ~default Arg.string "syslog-hostname"
-
-let pp_level ppf = function
-  | Some Logs.Error -> Fmt.string ppf "Some Logs.Error"
-  | Some Logs.Warning -> Fmt.string ppf "Some Logs.Warning"
-  | Some Logs.Info -> Fmt.string ppf "Some Logs.Info"
-  | Some Logs.Debug -> Fmt.string ppf "Some Logs.Debug"
-  | Some Logs.App -> Fmt.string ppf "Some Logs.App"
-  | None -> Fmt.string ppf "None"
-
-let pp_pattern ppf = function
-  | `All -> Fmt.string ppf "`All"
-  | `Src s -> Fmt.pf ppf "`Src %S" s
-
-let pp_threshold ppf (pattern, level) =
-  Fmt.pf ppf "(%a,@ %a)" pp_pattern pattern pp_level level
-
-let logs =
-  let env = "MIRAGE_LOGS" in
-  let docs = unikernel_section in
-  let conv = Cmdliner.Arg.list Mirage_runtime.Arg.log_threshold in
-  let serialize ppf levels =
-    Fmt.(pf ppf "[%a]" (list ~sep:(const string "; ") pp_threshold) levels)
-  in
-  let runtime_conv = "(Cmdliner.Arg.list Mirage_runtime.Arg.log_threshold)" in
-  let doc =
-    strf
-      "Be more or less verbose. $(docv) must be of the form@ \
-       $(b,*:info,foo:debug) means that that the log threshold is set to@ \
-       $(b,info) for every log sources but the $(b,foo) which is set to@ \
-       $(b,debug)."
-  in
-  let logs = Key.Arg.conv ~conv ~serialize ~runtime_conv in
-  let info = Key.Arg.info ~env ~docv:"LEVEL" ~doc ~docs [ "l"; "logs" ] in
-  let arg = Key.Arg.(opt ~stage:`Run logs []) info in
-  Key.create "logs" arg
+let syslog_hostname default = runtime_key "syslog_hostname %S" default
+let logs = Key.runtime "Mirage_runtime.logs"
 
 include (Key : Functoria.KEY with module Arg := Arg)

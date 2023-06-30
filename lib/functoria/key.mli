@@ -97,32 +97,23 @@ module Arg : sig
 
   (** {1 Optional Arguments} *)
 
-  type stage = [ `Configure | `Run ]
-  (** The type for specifying at which stage an argument is available.
-
-      - [`Configure] means that the argument is read on the command-line at
-        configuration-time.
-      - [`Run] means that the argument is read on the command-line at runtime. *)
-
-  val opt : ?stage:stage -> 'a converter -> 'a -> info -> 'a t
+  val opt : 'a converter -> 'a -> info -> 'a t
   (** [opt conv v i] is similar to
       {{:http://erratique.ch/software/cmdliner/doc/Cmdliner/Arg/index.html#val-opt}
-        Cmdliner.Arg.opt} but for cross-stage optional command-line arguments.
-      If not set, [stage] is [`Configure]. *)
+        Cmdliner.Arg.opt} but for cross-stage optional command-line arguments. *)
 
-  val required : ?stage:stage -> 'a converter -> info -> 'a option t
+  val required : 'a converter -> info -> 'a option t
   (** [required conv i] is similar to
       {{:http://erratique.ch/software/cmdliner/doc/Cmdliner/Arg/index.html#val-required}
         Cmdliner.Arg.required} but for cross-stage required command-line
-      arguments. If not set, [stage] is [`Configure]. *)
+      arguments. *)
 
-  val flag : ?stage:stage -> info -> bool t
+  val flag : info -> bool t
   (** [flag i] is similar to
       {{:http://erratique.ch/software/cmdliner/doc/Cmdliner/Arg/index.html#val-flag}
-        Cmdliner.Arg.flag} but for cross-stage command-line flags. If not set,
-      [stage] is [`Configure]. *)
+        Cmdliner.Arg.flag} but for cross-stage command-line flags. *)
 
-  val opt_all : ?stage:stage -> 'a converter -> info -> 'a list t
+  val opt_all : 'a converter -> info -> 'a list t
 end
 
 (** {1 Configuration Keys} *)
@@ -179,7 +170,9 @@ val name : t -> string
 val v : 'a key -> t
 (** [v k] is the [k] with its type hidden. *)
 
-val runtime : string -> t
+type 'a runtime_key = t
+
+val runtime : string -> 'a runtime_key
 (** [runtime x] is the runtime key whose value is [x ()] *)
 
 val abstract : 'a key -> t
@@ -214,17 +207,6 @@ val deps : 'a value -> Set.t
 
 val pp_deps : 'a value Fmt.t
 (** [pp_deps fmt v] prints the name of the dependencies of [v]. *)
-
-(** {1 Stages} *)
-
-val is_runtime : t -> bool
-(** [is_runtime k] is true if [k]'s stage is [`Run]. *)
-
-val is_configure : t -> bool
-(** [is_configure k] is true if [k]'s stage is [`Configure]. *)
-
-val filter_stage : Arg.stage -> Set.t -> Set.t
-(** [filter_stage s ks] is [ks] but with only keys available at stage [s]. *)
 
 (** {1 Parsing context} *)
 
@@ -263,7 +245,7 @@ val pps : context -> Set.t Fmt.t
 
 (** {1 Code Serialization} *)
 
-val serialize_call : t Fmt.t
+val serialize_call : 'a runtime_key Fmt.t
 (** [serialize_call fmt k] outputs [Key_gen.n ()] to [fmt], where [n] is [k]'s
     {{!ocaml_name} OCaml name}. *)
 
