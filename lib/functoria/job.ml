@@ -33,8 +33,7 @@ module Keys = struct
     Log.info (fun m -> m "Generating: %a (keys)" Fpath.pp file);
     Action.with_output ~path:file ~purpose:"key_gen file" (fun ppf ->
         let keys = Key.Set.of_list @@ Info.keys i in
-        let pp_var = Key.serialize (Info.context i) in
-        Fmt.pf ppf "@[<v>%a@]@." Fmt.(iter Key.Set.iter pp_var) keys)
+        Fmt.pf ppf "@[<v>%a@]@." Fmt.(iter Key.Set.iter Key.serialize) keys)
 end
 
 let keys ?(runtime_package = "functoria-runtime")

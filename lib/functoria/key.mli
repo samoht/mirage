@@ -182,12 +182,6 @@ val abstract : 'a key -> t
 val equal : t -> t -> bool
 (** [equal] is the equality function of untyped keys. *)
 
-val hash : t -> int
-(** [hash] is the hash function for untyped keys. *)
-
-val compare : t -> t -> int
-(** [compare] compares untyped keys. *)
-
 val pp : t Fmt.t
 (** [pp fmt k] prints the name of [k]. *)
 
@@ -249,7 +243,7 @@ val serialize_call : 'a runtime_key Fmt.t
 (** [serialize_call fmt k] outputs [Key_gen.n ()] to [fmt], where [n] is [k]'s
     {{!ocaml_name} OCaml name}. *)
 
-val serialize : context -> t Fmt.t
+val serialize : t Fmt.t
 (** [serialize ctx ppf k] outputs the [Cmdliner] runes to parse command-line
     arguments represented by [k] at runtime. *)
 

@@ -19,8 +19,6 @@
 open Misc
 
 module Serialize = struct
-  let string fmt s = Format.fprintf fmt "%S" s
-
   let option x ppf v =
     match v with
     | None -> Fmt.(Dump.option x) ppf v
@@ -116,22 +114,6 @@ module Arg = struct
     in
     Cmdliner.Arg.info ~docs ?docv ?doc ?env names
 
-  let serialize_env fmt =
-    Fmt.pf fmt "(Cmdliner.Cmd.Env.info %a)" Serialize.string
-
-  let serialize_info fmt { docs; docv; doc; env; names } =
-    let pp_opt field pp ppf = function
-      | None -> ()
-      | Some v -> Fmt.pf ppf "@ ~%s:%a" field pp v
-    in
-    let pp_env = pp_opt "env" serialize_env in
-    let pp_doc = pp_opt "doc" Serialize.string in
-    let pp_docv = pp_opt "docv" Serialize.string in
-    Format.fprintf fmt "@[(info@ ~docs:%a%a%a%a@ %a)@]" Serialize.string docs
-      pp_docv docv pp_doc doc pp_env env
-      Serialize.(list string)
-      names
-
   (** {1 Arguments} *)
 
   type 'a kind =
@@ -147,12 +129,6 @@ module Arg = struct
     | Opt_all c -> pp_conv (list c)
     | Required c -> pp_conv (some c)
     | Flag -> Fmt.bool
-
-  let hash_of_kind : type a. a kind -> int = function
-    | Opt (x, _) -> Hashtbl.hash (`Opt x)
-    | Required _ -> Hashtbl.hash `Required
-    | Opt_all _ -> Hashtbl.hash `All
-    | Flag -> Hashtbl.hash `Flag
 
   let compare_kind : type a b. a kind -> b kind -> int =
    fun a b ->
@@ -173,11 +149,6 @@ module Arg = struct
 
   let pp t = pp_kind t.kind
   let equal x y = x.info = y.info && compare_kind x.kind y.kind = 0
-
-  let compare x y =
-    match compare x.info y.info with 0 -> compare_kind x.kind y.kind | i -> i
-
-  let hash x = Hashtbl.hash (Hashtbl.hash x.info, hash_of_kind x.kind)
   let opt conv default info = { info; kind = Opt (default, conv) }
   let flag info = { info; kind = Flag }
   let required conv info = { info; kind = Required conv }
@@ -222,30 +193,6 @@ module Arg = struct
           Term.(const list_to_option $ Arg.value arg)
         in
         make_opt_all_cmdliner wrap i desc
-
-  (* This is only called by serialize_ro, hence a configure time
-           key, so the value is known. *)
-
-  let serialize (type a) : a -> a t serialize =
-   fun v ppf t ->
-    match t.kind with
-    | Flag ->
-        Fmt.pf ppf "Cmdliner.Arg.(value@ (flag@ %a))" serialize_info t.info
-    | Opt (_, c) ->
-        Fmt.pf ppf "Cmdliner.Arg.(value@ (opt@ %s@ %a@ %a))" (runtime_conv c)
-          (serialize c) v serialize_info t.info
-    | Required c ->
-        let pp_default ppf = function
-          | None -> ()
-          | Some d -> Fmt.pf ppf "@ ~default:%a" (serialize c) d
-        in
-        Fmt.pf ppf "Cmdliner.Arg.(required@ (opt%a@ (some %s)@ None %a))"
-          pp_default v (runtime_conv c) serialize_info t.info
-    | Opt_all c ->
-        Fmt.pf ppf "Cmdliner.Arg.(value@ (opt_all@ %s@ %a@ %a))"
-          (runtime_conv c)
-          (serialize (list c))
-          v serialize_info t.info
 end
 
 type 'a key = { name : string; arg : 'a Arg.t; key : 'a Context.key }
@@ -254,27 +201,12 @@ type 'a runtime_key = t
 
 let runtime s = Run s
 let equal_any x y = String.equal x.name y.name && Arg.equal x.arg y.arg
-let hash_any x = Hashtbl.hash (Hashtbl.hash x.name, Arg.hash x.arg)
-
-let compare_any x y =
-  match String.compare x.name y.name with
-  | 0 -> Arg.compare x.arg y.arg
-  | i -> i
 
 let equal x y =
   match (x, y) with
   | Any x, Any y -> equal_any x y
   | Run x, Run y -> String.equal x y
   | _ -> false
-
-let hash = function Any x -> hash_any x | Run x -> Hashtbl.hash x
-
-let compare x y =
-  match (x, y) with
-  | Any x, Any y -> compare_any x y
-  | Run x, Run y -> String.compare x y
-  | Any _, Run _ -> 1
-  | Run _, Any _ -> -1
 
 (* Set of keys, without runtime name conflicts. This is useful to create a
    valid cmdliner term. *)
@@ -321,7 +253,6 @@ end
 
 let v x = Any x
 let abstract = v
-let arg k = k.arg
 let name = function Any k -> k.name | Run k -> k
 let stage = function Any _ -> `Configure | Run _ -> `Run
 let is_runtime k = match stage k with `Run -> true | `Configure -> false
@@ -460,18 +391,8 @@ let serialize_call fmt = function
   | Any k -> Fmt.pf fmt "(%s.%s ())" module_name (ocaml_name k.name)
   | Run k -> Fmt.pf fmt "(%s.%s ())" module_name (ocaml_name k)
 
-let serialize ctx ppf k = Arg.serialize (get ctx k) ppf (arg k)
-
-let serialize_runtime ctx fmt = function
+let serialize fmt = function
   | Run k ->
       Format.fprintf fmt "@[<2>let %s =@ @[Functoria_runtime.key@ %s@]@]@,"
         (ocaml_name k) k
-  | Any k ->
-      Format.fprintf fmt
-        "@[<2>let %s_t =@ @[<2>%a@]@]@,\
-         @,\
-         @[<2>let %s =@ @[Functoria_runtime.key@ %s_t@]@]@,"
-        (ocaml_name k.name) (serialize ctx) k (ocaml_name k.name)
-        (ocaml_name k.name)
-
-let serialize ctx fmt k = if is_runtime k then serialize_runtime ctx fmt k
+  | _ -> ()
