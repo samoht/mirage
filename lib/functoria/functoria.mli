@@ -126,10 +126,7 @@ include DSL
 (** The signature for run-time and configure-time command-line keys. *)
 module type KEY =
   module type of Key
-    with type 'a Arg.converter = 'a Key.Arg.converter
-     and type 'a Arg.t = 'a Key.Arg.t
-     and type Arg.info = Key.Arg.info
-     and type 'a value = 'a Key.value
+    with type 'a value = 'a Key.value
      and type 'a key = 'a Key.key
      and type t = Key.t
      and type Set.t = Key.Set.t

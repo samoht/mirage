@@ -1,3 +1,4 @@
+open Cmdliner
 open Functoria
 open Mirage_impl_misc
 open Mirage_impl_kv
@@ -252,13 +253,14 @@ let docteur_solo5 (mode : mode) extra_deps disk branch analyze remote =
 
 let disk =
   let doc =
-    Key.Arg.info
+    Arg.info
       ~doc:
         "Name of the docteur disk (for Solo5 targets, the name must contains \
          only alpanumeric characters)."
       [ "disk" ]
   in
-  Key.(create "disk" Arg.(opt string "disk" doc))
+  let key = Arg.(value & opt string "disk" doc) in
+  Key.create "disk" key Fmt.Dump.string
 
 let analyze = Key.runtime "Mirage_runtime.analyze"
 

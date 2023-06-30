@@ -1,19 +1,22 @@
 open Functoria
+open Cmdliner
 module Key = Key
+
+let docs = "APPLICATION OPTIONS"
 
 let warn_error =
   let doc = "Enable -warn-error when compiling OCaml sources." in
-  let doc = Key.Arg.info ~docv:"BOOL" ~doc [ "warn-error" ] in
-  let key = Key.Arg.(opt bool false doc) in
-  Key.create "warn_error" key
+  let doc = Arg.info ~docs ~docv:"BOOL" ~doc [ "warn-error" ] in
+  let key = Arg.(value & opt bool false doc) in
+  Key.create "warn_error" key Fmt.bool
 
 let vote =
   let doc = "Vote." in
-  let doc = Key.Arg.info ~docv:"VOTE" ~doc [ "vote" ] in
-  let key = Key.Arg.(opt string "cat" doc) in
-  Key.create "vote" key
+  let doc = Arg.info ~docs ~docv:"VOTE" ~doc [ "vote" ] in
+  let key = Arg.(value & opt string "cat" doc) in
+  Key.create "vote" key Fmt.string
 
-let file_of_key k = Fpath.v Key.(name @@ v k)
+let file_of_key k = Fpath.v Key.(name k)
 
 let write_key i k f =
   let context = Info.context i in

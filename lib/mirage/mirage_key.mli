@@ -18,19 +18,7 @@
 
     {e Release %%VERSION%%} *)
 
-module Arg : sig
-  include module type of struct
-    include Functoria.Key.Arg
-  end
-
-  val ipv4_address : Ipaddr.V4.t converter
-  val ipv4 : Ipaddr.V4.Prefix.t converter
-  val ipv6_address : Ipaddr.V6.t converter
-  val ipv6 : Ipaddr.V6.Prefix.t converter
-  val ip_address : Ipaddr.t converter
-end
-
-include Functoria.KEY with module Arg := Arg
+include Functoria.KEY
 
 val abstract : 'a key -> t [@@ocaml.deprecated "Use Mirage.Key.v."]
 
