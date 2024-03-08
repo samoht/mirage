@@ -4,4 +4,4 @@
 
 (cram
  (package functoria)
- (deps ./test.exe))
+ (deps test.exe test.ml (package functoria)))

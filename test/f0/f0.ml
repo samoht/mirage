@@ -32,7 +32,7 @@ module C = struct
   let prelude _ = ""
   let name = "test"
   let version = "1.0~test"
-  let packages = [ package "functoria"; package "f0" ]
+  let packages = [ package ~sublibs:[ "f0" ] "functoria" ]
   let keys = Key.[ v vote; v warn_error ]
   let connect _ _ _ = code ~pos:__POS__ "()"
 

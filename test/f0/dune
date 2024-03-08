@@ -1,4 +1,4 @@
 (library
  (name f0)
- (package functoria)
+ (public_name functoria.f0)
  (libraries functoria))
