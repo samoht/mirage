@@ -1,3 +1,5 @@
 (cram
- (deps config.ml (package mirage)
- (package mirage)))
+ (deps
+  config.ml
+  (package mirage))
+ (package mirage))
