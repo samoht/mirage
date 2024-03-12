@@ -364,7 +364,7 @@ let run t = %s.Main.run t ; exit 0|ocaml}
       let stanzas = Mirage_target.build_context ?build_dir i in
       let main =
         Dune.stanza {|
-(lang dune 2.0)
+(lang dune 3.0)
 
 (context (default))
         |}
