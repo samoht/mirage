@@ -1,0 +1,3 @@
+(cram
+ (deps config.ml (package mirage)
+ (package mirage)))

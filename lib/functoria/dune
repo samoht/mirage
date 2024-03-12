@@ -1,6 +1,6 @@
 (library
  (name functoria)
- (public_name functoria)
+ (public_name mirage.functoria)
  (libraries
   uri
   emile

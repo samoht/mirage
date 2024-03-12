@@ -22,7 +22,6 @@ depends: [
   "dune" {>= "2.9.0"}
   "dune" {with-test & >= "3.0.0"}
   "ipaddr" {>= "5.0.0"}
-  "functoria" {= version}
   "bos"
   "logs"
   "opam-monorepo" {>= "0.3.2"}

@@ -1,4 +1,4 @@
-open F0
+open E2e
 open Functoria
 open Cmdliner
 
