@@ -33,6 +33,9 @@ depends: [
   "opam-monorepo" {>= "0.3.2"}
   "alcotest" {with-test}
 ]
+
+conflicts: [ "jbuilder" {with-test} ]
+
 synopsis: "The MirageOS library operating system"
 description: """
 MirageOS is a library operating system that constructs unikernels for
