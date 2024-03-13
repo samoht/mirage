@@ -1,12 +1,5 @@
-(library
- (public_name mirage.key)
- (name mirage_key)
- (wrapped false)
- (libraries ipaddr mirage.functoria bos)
- (modules mirage_key mirage_runtime_arg))
+(include_subdirs qualified)
 
 (library
  (public_name mirage)
- (wrapped false)
- (libraries mirage.impl mirage.target)
- (modules :standard \ mirage_key mirage_runtime_arg))
+ (libraries ipaddr bos mirage.functoria))

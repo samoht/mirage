@@ -16,9 +16,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
 
+open Impl
 open Functoria
 module Type = Type
-module Impl = Impl
+module Impl = Functoria.Impl
 module Info = Info
 module Dune = Dune
 module Key = Mirage_key
@@ -30,137 +31,134 @@ include Functoria.DSL
 
 (** {2 Devices} *)
 
-type qubesdb = Mirage_impl_qubesdb.qubesdb
+type qubesdb = Qubesdb.qubesdb
 
-let qubesdb = Mirage_impl_qubesdb.qubesdb
-let default_qubesdb = Mirage_impl_qubesdb.default_qubesdb
+let qubesdb = Qubesdb.qubesdb
+let default_qubesdb = Qubesdb.default_qubesdb
 
-type time = Mirage_impl_time.time
+type time = Time.time
 
-let time = Mirage_impl_time.time
-let default_time = Mirage_impl_time.default_time
+let time = Time.time
+let default_time = Time.default_time
 
-type pclock = Mirage_impl_pclock.pclock
+type pclock = Pclock.pclock
 
-let pclock = Mirage_impl_pclock.pclock
-let default_posix_clock = Mirage_impl_pclock.default_posix_clock
+let pclock = Pclock.pclock
+let default_posix_clock = Pclock.default_posix_clock
 
-type mclock = Mirage_impl_mclock.mclock
+type mclock = Mclock.mclock
 
-let mclock = Mirage_impl_mclock.mclock
-let default_monotonic_clock = Mirage_impl_mclock.default_monotonic_clock
+let mclock = Mclock.mclock
+let default_monotonic_clock = Mclock.default_monotonic_clock
 
-type random = Mirage_impl_random.random
+type random = Random.random
 
-let random = Mirage_impl_random.random
-let default_random = Mirage_impl_random.default_random
-let rng = Mirage_impl_random.rng
+let random = Random.random
+let default_random = Random.default_random
+let rng = Random.rng
 
-type kv_ro = Mirage_impl_kv.ro
+type kv_ro = Kv.ro
 
-let kv_ro = Mirage_impl_kv.ro
-let direct_kv_ro = Mirage_impl_kv.direct_kv_ro
-let crunch = Mirage_impl_kv.crunch
-let generic_kv_ro = Mirage_impl_kv.generic_kv_ro
+let kv_ro = Kv.ro
+let direct_kv_ro = Kv.direct_kv_ro
+let crunch = Kv.crunch
+let generic_kv_ro = Kv.generic_kv_ro
 
-type kv_rw = Mirage_impl_kv.rw
+type kv_rw = Kv.rw
 
-let kv_rw = Mirage_impl_kv.rw
-let direct_kv_rw = Mirage_impl_kv.direct_kv_rw
-let kv_rw_mem = Mirage_impl_kv.mem_kv_rw
+let kv_rw = Kv.rw
+let direct_kv_rw = Kv.direct_kv_rw
+let kv_rw_mem = Kv.mem_kv_rw
 
 let docteur ?mode ?name ?output ?analyze ?branch ?extra_deps remote =
-  Mirage_impl_block.docteur ?mode ?name ?output ?analyze ?branch ?extra_deps
-    remote
+  Block.docteur ?mode ?name ?output ?analyze ?branch ?extra_deps remote
 
 let chamelon ~program_block_size ?(pclock = default_posix_clock) block =
-  Mirage_impl_block.chamelon ~program_block_size $ block $ pclock
+  Block.chamelon ~program_block_size $ block $ pclock
 
 let tar_kv_rw ?(pclock = default_posix_clock) block =
-  Mirage_impl_block.tar_kv_rw pclock block
+  Block.tar_kv_rw pclock block
 
-type block = Mirage_impl_block.block
+type block = Block.block
 
-let block = Mirage_impl_block.block
-let tar_kv_ro = Mirage_impl_block.tar_kv_ro
-let fat_ro = Mirage_impl_block.fat_ro
-let generic_block = Mirage_impl_block.generic_block
-let ramdisk = Mirage_impl_block.ramdisk
-let block_of_xenstore_id = Mirage_impl_block.block_of_xenstore_id
-let block_of_file = Mirage_impl_block.block_of_file
+let block = Block.block
+let tar_kv_ro = Block.tar_kv_ro
+let fat_ro = Block.fat_ro
+let generic_block = Block.generic_block
+let ramdisk = Block.ramdisk
+let block_of_xenstore_id = Block.block_of_xenstore_id
+let block_of_file = Block.block_of_file
+let ccm_block ?nonce_len key block = Block.ccm_block ?nonce_len key $ block
 
-let ccm_block ?nonce_len key block =
-  Mirage_impl_block.ccm_block ?nonce_len key $ block
+type network = Network.network
 
-type network = Mirage_impl_network.network
+let network = Network.network
+let netif = Network.netif
+let default_network = Network.default_network
 
-let network = Mirage_impl_network.network
-let netif = Mirage_impl_network.netif
-let default_network = Mirage_impl_network.default_network
+type ethernet = Ethernet.ethernet
 
-type ethernet = Mirage_impl_ethernet.ethernet
+let ethernet = Ethernet.ethernet
+let etif = Ethernet.etif
 
-let ethernet = Mirage_impl_ethernet.ethernet
-let etif = Mirage_impl_ethernet.etif
+type arpv4 = Arp.arpv4
 
-type arpv4 = Mirage_impl_arpv4.arpv4
+let arpv4 = Arp.arpv4
+let arp = Arp.arp
 
-let arpv4 = Mirage_impl_arpv4.arpv4
-let arp = Mirage_impl_arpv4.arp
+type v4 = Ip.v4
+type v6 = Ip.v6
+type v4v6 = Ip.v4v6
+type 'a ip = 'a Ip.ip
+type ipv4 = Ip.ipv4
+type ipv6 = Ip.ipv6
+type ipv4v6 = Ip.ipv4v6
 
-type v4 = Mirage_impl_ip.v4
-type v6 = Mirage_impl_ip.v6
-type v4v6 = Mirage_impl_ip.v4v6
-type 'a ip = 'a Mirage_impl_ip.ip
-type ipv4 = Mirage_impl_ip.ipv4
-type ipv6 = Mirage_impl_ip.ipv6
-type ipv4v6 = Mirage_impl_ip.ipv4v6
+let ipv4 = Ip.ipv4
+let ipv6 = Ip.ipv6
+let ipv4_qubes = Ip.ipv4_qubes
+let ipv4v6 = Ip.ipv4v6
+let create_ipv4 = Ip.create_ipv4
+let create_ipv6 = Ip.create_ipv6
+let create_ipv4v6 = Ip.create_ipv4v6
 
-let ipv4 = Mirage_impl_ip.ipv4
-let ipv6 = Mirage_impl_ip.ipv6
-let ipv4_qubes = Mirage_impl_ip.ipv4_qubes
-let ipv4v6 = Mirage_impl_ip.ipv4v6
-let create_ipv4 = Mirage_impl_ip.create_ipv4
-let create_ipv6 = Mirage_impl_ip.create_ipv6
-let create_ipv4v6 = Mirage_impl_ip.create_ipv4v6
-
-type ipv4_config = Mirage_impl_ip.ipv4_config = {
+type ipv4_config = Ip.ipv4_config = {
   network : Ipaddr.V4.Prefix.t;
   gateway : Ipaddr.V4.t option;
 }
 
-type ipv6_config = Mirage_impl_ip.ipv6_config = {
+type ipv6_config = Ip.ipv6_config = {
   network : Ipaddr.V6.Prefix.t;
   gateway : Ipaddr.V6.t option;
 }
 
-type 'a udp = 'a Mirage_impl_udp.udp
+type 'a udp = 'a Udp.udp
 
-let udp = Mirage_impl_udp.udp
+let udp = Udp.udp
 
-type udpv4v6 = Mirage_impl_udp.udpv4v6
+type udpv4v6 = Udp.udpv4v6
 
-let udpv4v6 = Mirage_impl_udp.udpv4v6
-let direct_udp = Mirage_impl_udp.direct_udp
-let socket_udpv4v6 = Mirage_impl_udp.socket_udpv4v6
+let udpv4v6 = Udp.udpv4v6
+let direct_udp = Udp.direct_udp
+let socket_udpv4v6 = Udp.socket_udpv4v6
 
-type 'a tcp = 'a Mirage_impl_tcp.tcp
+type 'a tcp = 'a Tcp.tcp
 
-let tcp = Mirage_impl_tcp.tcp
+let tcp = Tcp.tcp
 
-type tcpv4v6 = Mirage_impl_tcp.tcpv4v6
+type tcpv4v6 = Tcp.tcpv4v6
 
-let tcpv4v6 = Mirage_impl_tcp.tcpv4v6
-let direct_tcp = Mirage_impl_tcp.direct_tcp
-let socket_tcpv4v6 = Mirage_impl_tcp.socket_tcpv4v6
+let tcpv4v6 = Tcp.tcpv4v6
+let direct_tcp = Tcp.direct_tcp
+let socket_tcpv4v6 = Tcp.socket_tcpv4v6
 
-type stackv4v6 = Mirage_impl_stack.stackv4v6
+type stackv4v6 = Stack.stackv4v6
 
-let stackv4v6 = Mirage_impl_stack.stackv4v6
-let generic_stackv4v6 = Mirage_impl_stack.generic_stackv4v6
-let static_ipv4v6_stack = Mirage_impl_stack.static_ipv4v6_stack
-let direct_stackv4v6 = Mirage_impl_stack.direct_stackv4v6
-let socket_stackv4v6 = Mirage_impl_stack.socket_stackv4v6
+let stackv4v6 = Stack.stackv4v6
+let generic_stackv4v6 = Stack.generic_stackv4v6
+let static_ipv4v6_stack = Stack.static_ipv4v6_stack
+let direct_stackv4v6 = Stack.direct_stackv4v6
+let socket_stackv4v6 = Stack.socket_stackv4v6
 
 let tcpv4v6_of_stackv4v6 v =
   let impl =
@@ -170,132 +168,122 @@ let tcpv4v6_of_stackv4v6 v =
     let connect _ modname = function
       | [ stackv4v6 ] ->
           code ~pos:__POS__ {ocaml|%s.connect %s|ocaml} modname stackv4v6
-      | _ -> Mirage_impl_misc.connect_err "tcpv4v6_of_stackv4v6" 1
+      | _ -> Misc.connect_err "tcpv4v6_of_stackv4v6" 1
     in
     impl ~packages ~connect "Tcpip_stack_direct.TCPV4V6" (stackv4v6 @-> tcpv4v6)
   in
   impl $ v
 
-type conduit = Mirage_impl_conduit.conduit
+type conduit = Conduit.conduit
 
-let conduit = Mirage_impl_conduit.conduit
-let conduit_direct = Mirage_impl_conduit.conduit_direct
+let conduit = Conduit.conduit
+let conduit_direct = Conduit.conduit_direct
 
-type resolver = Mirage_impl_resolver.resolver
+type resolver = Resolver.resolver
 
-let resolver = Mirage_impl_resolver.resolver
-let resolver_unix_system = Mirage_impl_resolver.resolver_unix_system
-let resolver_dns = Mirage_impl_resolver.resolver_dns
+let resolver = Resolver.resolver
+let resolver_unix_system = Resolver.resolver_unix_system
+let resolver_dns = Resolver.resolver_dns
 
-type dns_client = Mirage_impl_dns.dns_client
+type dns_client = Dns.dns_client
 
-let dns_client = Mirage_impl_dns.dns_client
+let dns_client = Dns.dns_client
 
 let generic_dns_client ?timeout ?nameservers ?(random = default_random)
     ?(time = default_time) ?(mclock = default_monotonic_clock)
     ?(pclock = default_posix_clock) stackv4v6 =
-  Mirage_impl_dns.generic_dns_client timeout nameservers
+  Dns.generic_dns_client timeout nameservers
   $ random
   $ time
   $ mclock
   $ pclock
   $ stackv4v6
 
-type happy_eyeballs = Mirage_impl_happy_eyeballs.happy_eyeballs
+type happy_eyeballs = Happy_eyeballs.happy_eyeballs
 
-let happy_eyeballs = Mirage_impl_happy_eyeballs.happy_eyeballs
+let happy_eyeballs = Happy_eyeballs.happy_eyeballs
 
 let generic_happy_eyeballs ?aaaa_timeout ?connect_delay ?connect_timeout
     ?resolve_timeout ?resolve_retries ?timer_interval ?(time = default_time)
     ?(mclock = default_monotonic_clock) stackv4v6 dns_client =
-  Mirage_impl_happy_eyeballs.generic_happy_eyeballs aaaa_timeout connect_delay
+  Happy_eyeballs.generic_happy_eyeballs aaaa_timeout connect_delay
     connect_timeout resolve_timeout resolve_retries timer_interval
   $ time
   $ mclock
   $ stackv4v6
   $ dns_client
 
-type syslog = Mirage_impl_syslog.syslog
+type syslog = Syslog.syslog
 
-let syslog = Mirage_impl_syslog.syslog
-let syslog_tls = Mirage_impl_syslog.syslog_tls
-let syslog_tcp = Mirage_impl_syslog.syslog_tcp
-let syslog_udp = Mirage_impl_syslog.syslog_udp
+let syslog = Syslog.syslog
+let syslog_tls = Syslog.syslog_tls
+let syslog_tcp = Syslog.syslog_tcp
+let syslog_udp = Syslog.syslog_udp
 
-type syslog_config = Mirage_impl_syslog.syslog_config = {
+type syslog_config = Syslog.syslog_config = {
   hostname : string;
   server : Ipaddr.t option;
   port : int option;
   truncate : int option;
 }
 
-let syslog_config = Mirage_impl_syslog.syslog_config
+let syslog_config = Syslog.syslog_config
 
-type http = Mirage_impl_http.http
+type http = Http.http
 
-let http = Mirage_impl_http.http
-let cohttp_server = Mirage_impl_http.cohttp_server
-let httpaf_server = Mirage_impl_http.httpaf_server
+let http = Http.http
+let cohttp_server = Http.cohttp_server
+let httpaf_server = Http.httpaf_server
 
-type http_client = Mirage_impl_http.http_client
+type http_client = Http.http_client
 
-let http_client = Mirage_impl_http.http_client
-let cohttp_client = Mirage_impl_http.cohttp_client
+let http_client = Http.http_client
+let cohttp_client = Http.cohttp_client
 
-type http_server = Mirage_impl_http.http_server
+type http_server = Http.http_server
 
-let http_server = Mirage_impl_http.http_server
-let paf_server ~port tcpv4v6 = Mirage_impl_http.paf_server port $ tcpv4v6
+let http_server = Http.http_server
+let paf_server ~port tcpv4v6 = Http.paf_server port $ tcpv4v6
 
-type alpn_client = Mirage_impl_http.alpn_client
+type alpn_client = Http.alpn_client
 
-let alpn_client = Mirage_impl_http.alpn_client
+let alpn_client = Http.alpn_client
 
 let paf_client ?(pclock = default_posix_clock) tcpv4v6 mimic =
-  Mirage_impl_http.paf_client $ pclock $ tcpv4v6 $ mimic
+  Http.paf_client $ pclock $ tcpv4v6 $ mimic
 
 type argv = Functoria.argv
 
 let argv = Functoria.argv
-let default_argv = Mirage_impl_argv.default_argv
-let no_argv = Mirage_impl_argv.no_argv
+let default_argv = Argv.default_argv
+let no_argv = Argv.no_argv
 
-type reporter = Mirage_impl_reporter.reporter
+type reporter = Reporter.reporter
 
-let reporter = Mirage_impl_reporter.reporter
-let default_reporter = Mirage_impl_reporter.default_reporter
-let no_reporter = Mirage_impl_reporter.no_reporter
+let reporter = Reporter.reporter
+let default_reporter = Reporter.default_reporter
+let no_reporter = Reporter.no_reporter
 
-type mimic = Mirage_impl_mimic.mimic
+type mimic = Mimic.mimic
 
-let mimic = Mirage_impl_mimic.mimic
+let mimic = Mimic.mimic
 
 let mimic_happy_eyeballs stackv4v6 dns_client happy_eyeballs =
-  Mirage_impl_mimic.mimic_happy_eyeballs
-  $ stackv4v6
-  $ dns_client
-  $ happy_eyeballs
+  Mimic.mimic_happy_eyeballs $ stackv4v6 $ dns_client $ happy_eyeballs
 
-type git_client = Mirage_impl_git.git_client
+type git_client = Git.git_client
 
-let git_client = Mirage_impl_git.git_client
-
-let merge_git_clients ctx0 ctx1 =
-  Mirage_impl_git.git_merge_clients $ ctx0 $ ctx1
-
-let git_tcp tcpv4v6 ctx = Mirage_impl_git.git_tcp $ tcpv4v6 $ ctx
+let git_client = Git.git_client
+let merge_git_clients ctx0 ctx1 = Git.git_merge_clients $ ctx0 $ ctx1
+let git_tcp tcpv4v6 ctx = Git.git_tcp $ tcpv4v6 $ ctx
 
 let git_ssh ?authenticator ~key ~password ?(mclock = default_monotonic_clock)
     ?(time = default_time) tcpv4v6 ctx =
-  Mirage_impl_git.git_ssh ?authenticator key password
-  $ mclock
-  $ tcpv4v6
-  $ time
-  $ ctx
+  Git.git_ssh ?authenticator key password $ mclock $ tcpv4v6 $ time $ ctx
 
 let git_http ?authenticator ?headers ?(pclock = default_posix_clock) tcpv4v6 ctx
     =
-  Mirage_impl_git.git_http ?authenticator headers $ pclock $ tcpv4v6 $ ctx
+  Git.git_http ?authenticator headers $ pclock $ tcpv4v6 $ ctx
 
 let delay = job
 
@@ -306,13 +294,13 @@ let delay_startup =
   let connect i _ = function
     | [ delay_key ] ->
         let modname =
-          match Mirage_impl_misc.get_target i with
+          match Misc.get_target i with
           | `Unix | `MacOSX -> "Unix_os.Time"
           | `Xen | `Qubes -> "Xen_os.Time"
           | `Virtio | `Hvt | `Spt | `Muen | `Genode -> "Solo5_os.Time"
         in
         code ~pos:__POS__ "%s.sleep_ns (Duration.of_sec %s)" modname delay_key
-    | _ -> Mirage_impl_misc.connect_err "delay_startup" 1
+    | _ -> Misc.connect_err "delay_startup" 1
   in
   impl ~packages ~runtime_args ~connect "Mirage_runtime" delay
 
@@ -351,8 +339,8 @@ let run t = %s.Main.run t ; exit 0|ocaml}
         let target = Info.get i Key.target in
         Fmt.str "%s-%a" name Key.pp_target target
 
-  let dune i = Mirage_target.dune i
-  let configure i = Mirage_target.configure i
+  let dune i = Target.dune i
+  let configure i = Target.configure i
 
   let dune_project =
     [ Dune.stanza {|
@@ -361,10 +349,10 @@ let run t = %s.Main.run t ; exit 0|ocaml}
 
   let dune_workspace =
     let f ?build_dir i =
-      let stanzas = Mirage_target.build_context ?build_dir i in
+      let stanzas = Target.build_context ?build_dir i in
       let main =
         Dune.stanza {|
-(lang dune 3.0)
+(lang dune 3.7)
 
 (context (default))
         |}
@@ -373,7 +361,7 @@ let run t = %s.Main.run t ; exit 0|ocaml}
     in
     Some f
 
-  let context_name i = Mirage_target.context_name i
+  let context_name i = Target.context_name i
 
   let create jobs =
     let keys = Key.[ v target ] in
@@ -389,9 +377,9 @@ let run t = %s.Main.run t ; exit 0|ocaml}
         ]
       in
       Key.match_ Key.(value target) @@ fun target ->
-      Mirage_target.packages target @ common
+      Target.packages target @ common
     in
-    let install = Mirage_target.install in
+    let install = Target.install in
     let extra_deps = List.map dep jobs in
     let connect _ _ _ = code ~pos:__POS__ "return ()" in
     impl ~keys ~packages_v ~configure ~dune ~connect ~extra_deps ~install
@@ -406,7 +394,7 @@ let backtrace =
   let connect _ _ = function
     | [ backtrace ] ->
         code ~pos:__POS__ "return (Printexc.record_backtrace %s)" backtrace
-    | _ -> Mirage_impl_misc.connect_err "backtrace" 1
+    | _ -> Misc.connect_err "backtrace" 1
   in
   impl ~runtime_args ~connect "Printexc" job
 
@@ -416,7 +404,7 @@ let randomize_hashtables =
     | [ randomize_hashtables ] ->
         code ~pos:__POS__ "return (if %s then Hashtbl.randomize ())"
           randomize_hashtables
-    | _ -> Mirage_impl_misc.connect_err "randomize_hashtables" 2
+    | _ -> Misc.connect_err "randomize_hashtables" 2
   in
   impl ~runtime_args ~connect "Hashtbl" job
 
@@ -486,7 +474,7 @@ let gc_control =
           custom_minor_ratio
           (pp_k ~name:"custom_minor_max_size")
           custom_minor_max_size
-    | _ -> Mirage_impl_misc.connect_err "gc_control" 11
+    | _ -> Misc.connect_err "gc_control" 11
   in
   impl ~runtime_args ~connect "Gc" job
 

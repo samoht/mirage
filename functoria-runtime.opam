@@ -20,9 +20,8 @@ build: [
 
 depends: [
   "ocaml" {>= "4.08.0"}
-  "dune" {>= "3.0.0"}
-  "cmdliner" {>= "1.1.1"}
-  "cmdliner" {with-test & >= "1.2.0"}
+  "dune" {>= "3.7.0"}
+  "cmdliner" {"1.2.0"}
 ]
 
 synopsis: "Runtime support library for functoria-generated code"

@@ -1,3 +1,4 @@
+open Impl
 open Functoria
 open Action.Syntax
 module Key = Mirage_key
@@ -46,13 +47,9 @@ let build_context ?build_dir:_ i =
 
 (* Configure step *)
 let generate_manifest_json with_devices () =
-  let networks =
-    List.map (fun n -> (n, `Network)) !Mirage_impl_network.all_networks
-  in
+  let networks = List.map (fun n -> (n, `Network)) !Network.all_networks in
   let blocks =
-    Hashtbl.fold
-      (fun k _v acc -> (k, `Block) :: acc)
-      Mirage_impl_block.all_blocks []
+    Hashtbl.fold (fun k _v acc -> (k, `Block) :: acc) Block.all_blocks []
   in
   let to_string (name, typ) =
     Fmt.str {json|{ "name": %S, "type": %S }|json} name
@@ -146,9 +143,14 @@ let solo5_abi = function
   | `Genode -> "genode"
   | `Spt -> "spt"
 
+let flags =
+  (* Disable "70 [missing-mli] Missing interface file." as we are only
+     generating .ml files currently. *)
+  [ ":standard"; "-w"; "-70" ]
+  @ if Misc.terminal () then [ "-color"; "always" ] else []
+
 let main i =
   let libraries = Info.libraries i in
-  let flags = Mirage_dune.flags i in
   let main = Fpath.to_string (main i) in
   let target = Info.get i Key.target in
   let pp_list f = Dune.compact_list f in

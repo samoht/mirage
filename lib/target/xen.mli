@@ -1,13 +1,8 @@
+open Impl
 open Functoria
 
 module Substitutions : sig
-  type v =
-    | Name
-    | Kernel
-    | Memory
-    | Block of Mirage_impl_block.block_t
-    | Network of string
-
+  type v = Name | Kernel | Memory | Block of Block.block_t | Network of string
   type t = (v * string) list
 
   val lookup : t -> v -> string

@@ -1,3 +1,4 @@
+module Misc = Impl.Misc
 open Functoria
 module Key = Mirage_key
 
@@ -13,9 +14,14 @@ let configure _ = Action.ok ()
 let main i = Fpath.(base (rem_ext (Info.main i)))
 let public_name i = match Info.output i with None -> Info.name i | Some o -> o
 
+let flags =
+  (* Disable "70 [missing-mli] Missing interface file." as we are only
+     generating .ml files currently. *)
+  [ ":standard"; "-w"; "-70" ]
+  @ if Misc.terminal () then [ "-color"; "always" ] else []
+
 let dune i =
   let libraries = Info.libraries i in
-  let flags = Mirage_dune.flags i in
   let public_name = public_name i in
   let main = Fpath.to_string (main i) in
   let pp_list f = Dune.compact_list f in

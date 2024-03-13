@@ -1,3 +1,4 @@
+open Impl
 open Functoria
 
 (* We generate an example .xl with common defaults, and a generic
@@ -28,13 +29,7 @@ let detected_bridge_name =
   | None -> "br"
 
 module Substitutions = struct
-  type v =
-    | Name
-    | Kernel
-    | Memory
-    | Block of Mirage_impl_block.block_t
-    | Network of string
-
+  type v = Name | Kernel | Memory | Block of Block.block_t | Network of string
   type t = (v * string) list
 
   let string_of_v = function
@@ -51,11 +46,11 @@ module Substitutions = struct
     let blocks =
       List.map
         (fun b -> (Block b, b.filename))
-        (Hashtbl.fold (fun _ v acc -> v :: acc) Mirage_impl_block.all_blocks [])
+        (Hashtbl.fold (fun _ v acc -> v :: acc) Block.all_blocks [])
     and networks =
       List.mapi
         (fun i n -> (Network n, Fmt.str "%s%d" detected_bridge_name i))
-        !Mirage_impl_network.all_networks
+        !Network.all_networks
     in
     [ (Name, Info.name i); (Kernel, Info.name i ^ ".xen"); (Memory, "256") ]
     @ blocks
@@ -71,7 +66,7 @@ let configure_main_xl ?substitutions ~ext i =
   in
   let path = Fpath.(v (Info.name i) + ext) in
   Action.with_output ~path ~purpose:"xl file" (fun fmt ->
-      let open Mirage_impl_block in
+      let open Block in
       append fmt "name = '%s'" (lookup substitutions Name);
       append fmt "kernel = '%s'" (lookup substitutions Kernel);
       append fmt "type = 'pvh'";
@@ -103,7 +98,7 @@ let configure_main_xl ?substitutions ~ext i =
       let networks =
         List.map
           (fun n -> Fmt.str "'bridge=%s'" (lookup substitutions (Network n)))
-          !Mirage_impl_network.all_networks
+          !Network.all_networks
       in
       append fmt
         "# if your system uses openvswitch then either edit /etc/xen/xl.conf \
